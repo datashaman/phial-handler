@@ -6,7 +6,9 @@ namespace Datashaman\Phial;
 
 use DI\ContainerBuilder;
 use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -35,10 +37,6 @@ class RuntimeHandler
 
     public function __construct()
     {
-        define('LAMBDA_TASK_API', getenv('AWS_LAMBDA_RUNTIME_API'));
-        define('LAMBDA_TASK_HANDLER', getenv('_HANDLER'));
-        define('LAMBDA_TASK_ROOT', getenv('LAMBDA_TASK_ROOT'));
-
         try {
             $this->buildContainer();
             $this->configureLogging();
@@ -62,7 +60,7 @@ class RuntimeHandler
                 $event = $this->getNextInvocation();
                 $context = $this->createContext();
                 $response = $this->container->call(
-                    LAMBDA_TASK_HANDLER,
+                    getenv('_HANDLER'),
                     [
                         'event' => $event,
                         'context' => $context,
@@ -122,12 +120,19 @@ class RuntimeHandler
         array $headers = [],
         array $body = []
     ): ResponseInterface {
-        $request = new Request(
-            $method,
-            $this->url($path),
-            $headers,
-            json_encode($body)
-        );
+        $request = $this->container->make(RequestInterface::class)
+            ->withMethod($method)
+            ->withUri($path);
+
+        foreach ($headers as $name => $value) {
+            $request = $request->withHeader($name, $value);
+        }
+
+        if ($body) {
+            $stream = $this->container->make(StreamInterface::class);
+            $stream->write(json_encode($body));
+            $request = $request->withBody($stream);
+        }
 
         return $this->container
             ->get(ClientInterface::class)
@@ -191,12 +196,19 @@ class RuntimeHandler
 
     private function url($path)
     {
-        return sprintf('http://%s/2018-06-01/', LAMBDA_TASK_API);
+        return sprintf('http://%s/2018-06-01/', getenv('AWS_LAMBDA_RUNTIME_API'));
     }
 
     private function taskPath(string $path = '')
     {
-        return realpath(LAMBDA_TASK_ROOT . '/' . $path);
+        return realpath(
+            sprintf(
+                '%s%s%s',
+                getenv('LAMBDA_TASK_ROOT'),
+                DIRECTORY_SEPARATOR,
+                $path
+            )
+        );
     }
 
     private function error(string $message, array $context = []): void
