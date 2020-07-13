@@ -1,4 +1,2 @@
 /.aws-sam/
-/out.txt
-/sam.log
 /vendor/

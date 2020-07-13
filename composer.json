@@ -8,17 +8,11 @@
             "Datashaman\\Phial\\": "src/"
         }
     },
-    "autoload-dev": {
-        "classmap": [
-            "tests"
-        ]
-    },
     "config": {
         "sort-packages": true,
         "preferred-install": "dist"
     },
     "require": {
-        "monolog/monolog": "^2.1",
         "php-di/php-di": "^6.2",
         "psr/http-client": "^1.0",
         "psr/log": "^1.1"
