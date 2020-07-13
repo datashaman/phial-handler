@@ -123,7 +123,7 @@ class RuntimeHandler
         array $body = []
     ): ResponseInterface {
         $request = $this->container->get(RequestFactoryInterface::class)
-            ->createRequest($method, $path);
+            ->createRequest($method, $this->url($path));
 
         foreach ($headers as $name => $value) {
             $request = $request->withHeader($name, $value);
