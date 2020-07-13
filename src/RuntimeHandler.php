@@ -44,7 +44,7 @@ class RuntimeHandler
             $this->error(
                 'Error initializing handler',
                 [
-                    'message' => $exception->getMessage(),
+                    'exception' => $exception,
                 ]
             );
             $this->postError($exception);
@@ -71,8 +71,9 @@ class RuntimeHandler
                 $this->error(
                     'Error processing event',
                     [
+                        'exception' => $exception,
                         'event' => $event ?? [],
-                        'response' => $response ?? '',
+                        'response' => $response ?? [],
                     ]
                 );
                 $this->postError($exception);
