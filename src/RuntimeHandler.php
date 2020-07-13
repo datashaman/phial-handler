@@ -6,6 +6,7 @@ namespace Datashaman\Phial;
 
 use DI\ContainerBuilder;
 use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
@@ -121,9 +122,8 @@ class RuntimeHandler
         array $headers = [],
         array $body = []
     ): ResponseInterface {
-        $request = $this->container->make(RequestInterface::class)
-            ->withMethod($method)
-            ->withUri($path);
+        $request = $this->container->get(RequestFactoryInterface::class)
+            ->createRequest($method, $path);
 
         foreach ($headers as $name => $value) {
             $request = $request->withHeader($name, $value);
