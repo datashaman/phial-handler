@@ -1,71 +1,15 @@
 <?php
 
-define('LAMBDA_TASK_API', getenv('AWS_LAMBDA_RUNTIME_API'));
-define('LAMBDA_TASK_HANDLER', getenv('_HANDLER'));
-define('LAMBDA_TASK_ROOT', getenv('LAMBDA_TASK_ROOT'));
+declare(strict_types=1);
 
-require_once LAMBDA_TASK_ROOT . '/vendor/autoload.php';
+namespace Datashaman\Phial;
 
 use DI\ContainerBuilder;
-use GuzzleHttp\Client;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-
-class Context
-{
-    /**
-     * @var RuntimeHandler
-     */
-    private $handler;
-
-    public function __construct(RuntimeHandler $handler)
-    {
-        $this->handler = $handler;
-    }
-
-    public function getRemainingTimeInMillis(): int
-    {
-    }
-
-    public function getFunctionName(): string
-    {
-        return getenv('AWS_LAMBDA_FUNCTION_NAME');
-    }
-
-    public function getFunctionVersion(): string
-    {
-        return getenv('AWS_LAMBDA_FUNCTION_VERSION');
-    }
-
-    public function getInvokedFunctionArn(): string
-    {
-    }
-
-    public function getMemoryLimitInMB(): int
-    {
-        return (int) getenv('AWS_LAMBDA_FUNCTION_MEMORY_SIZE');
-    }
-
-    public function getAwsRequestId(): string
-    {
-        return $this->handler->getRequestId();
-    }
-
-    public function getLogGroupName(): string
-    {
-        return getenv('AWS_LAMBDA_LOG_GROUP_NAME');
-    }
-
-    public function getLogStreamName(): string
-    {
-        return getenv('AWS_LAMBDA_LOG_STREAM_NAME');
-    }
-
-    public function getLogger(): LoggerInterface
-    {
-        return $this->handler->getLogger();
-    }
-}
+use Throwable;
 
 class RuntimeHandler
 {
@@ -75,7 +19,7 @@ class RuntimeHandler
     private $container;
 
     /**
-     * @var Client
+     * @var ClientInterface
      */
     private $client;
 
@@ -91,7 +35,9 @@ class RuntimeHandler
 
     public function __construct()
     {
-        $this->createClient();
+        define('LAMBDA_TASK_API', getenv('AWS_LAMBDA_RUNTIME_API'));
+        define('LAMBDA_TASK_HANDLER', getenv('_HANDLER'));
+        define('LAMBDA_TASK_ROOT', getenv('LAMBDA_TASK_ROOT'));
 
         try {
             $this->buildContainer();
@@ -105,7 +51,7 @@ class RuntimeHandler
             );
             $this->postError($exception);
         }
-}
+    }
 
     public function __invoke(): void
     {
@@ -170,25 +116,28 @@ class RuntimeHandler
         $this->container = $containerBuilder->build();
     }
 
-    private function createClient(): void
-    {
-        $this->info('Create client');
-
-        $this->client = new Client(
-            [
-                'base_uri' => sprintf(
-                    'http://%s/2018-06-01/',
-                    LAMBDA_TASK_API
-                ),
-            ]
+    private function sendRequest(
+        string $method,
+        string $path,
+        array $headers = [],
+        array $body = []
+    ): ResponseInterface {
+        $request = new Request(
+            $method,
+            $this->url($path),
+            $headers,
+            json_encode($body)
         );
+
+        return $this->container
+            ->get(ClientInterface::class)
+            ->sendRequest($request);
     }
 
     private function getNextInvocation(): array
     {
         $this->info('Get next invocation');
-
-        $response = $this->client->get('runtime/invocation/next');
+        $response = $this->sendRequest('GET', 'runtime/invocation/next');
         $this->requestId = $response->getHeader('lambda-runtime-aws-request-id')[0];
 
         return json_decode($response->getBody(), true);
@@ -198,11 +147,11 @@ class RuntimeHandler
     {
         $this->info('Post response');
 
-        $this->client->post(
+        $response = $this->sendRequest(
+            'POST',
             "runtime/invocation/{$this->requestId}/response",
-            [
-                'json' => $response,
-            ]
+            [],
+            $response
         );
     }
 
@@ -225,20 +174,24 @@ class RuntimeHandler
                 'errorType' => get_class($exception),
             ];
 
-            $this->client->post(
+            $response = $this->sendRequest(
+                'POST',
                 $path,
                 [
-                    'json' => $error,
-                    'headers' => [
-                        'Lambda-Runtime-Function-Error-Type' => 'Unhandled',
-                    ],
-                ]
+                    'Lambda-Runtime-Function-Error-Type' => 'Unhandled',
+                ],
+                $error
             );
         }
 
         if (!$this->requestId) {
             exit(1);
         }
+    }
+
+    private function url($path)
+    {
+        return sprintf('http://%s/2018-06-01/', LAMBDA_TASK_API);
     }
 
     private function taskPath(string $path = '')
@@ -260,5 +213,3 @@ class RuntimeHandler
         }
     }
 }
-
-(new RuntimeHandler())();
