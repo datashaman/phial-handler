@@ -145,8 +145,10 @@ class RuntimeHandler
         $this->info('Get next invocation');
         $response = $this->sendRequest('GET', 'runtime/invocation/next');
         $this->requestId = $response->getHeader('lambda-runtime-aws-request-id')[0];
+        $body = (string) $response->getBody();
+        $this->info('Invocation body', ['body' => $body]);
 
-        return json_decode((string) $response->getBody(), true);
+        return json_decode($body, true);
     }
 
     private function postResponse(array $response): void
