@@ -10,7 +10,7 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\StreamInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -130,8 +130,8 @@ class RuntimeHandler
         }
 
         if ($body) {
-            $stream = $this->container->make(StreamInterface::class);
-            $stream->write(json_encode($body));
+            $stream = $this->container->get(StreamFactoryInterface::class)
+                ->createStream(json_encode($body, JSON_THROW_ON_ERROR));
             $request = $request->withBody($stream);
         }
 
@@ -146,9 +146,8 @@ class RuntimeHandler
         $response = $this->sendRequest('GET', 'runtime/invocation/next');
         $this->requestId = $response->getHeader('lambda-runtime-aws-request-id')[0];
         $body = (string) $response->getBody();
-        $this->info('Invocation body', ['body' => $body]);
 
-        return json_decode($body, true);
+        return json_decode($body, true, 512, JSON_THROW_ON_ERROR);
     }
 
     private function postResponse(array $response): void
