@@ -197,12 +197,16 @@ class RuntimeHandler
         }
     }
 
-    private function url($path)
+    private function url(string $path): string
     {
-        return sprintf('http://%s/2018-06-01/', getenv('AWS_LAMBDA_RUNTIME_API'));
+        return sprintf(
+            'http://%s/2018-06-01/%s',
+            getenv('AWS_LAMBDA_RUNTIME_API'),
+            $path
+        );
     }
 
-    private function taskPath(string $path = '')
+    private function taskPath(string $path = ''): string
     {
         return realpath(
             sprintf(
