@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Datashaman\Phial;
 
 use DI\ContainerBuilder;
+use Exception;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
@@ -12,7 +13,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 class RuntimeHandler
 {
@@ -41,7 +41,7 @@ class RuntimeHandler
         try {
             $this->buildContainer();
             $this->configureLogging();
-        } catch (Throwable $exception) {
+        } catch (Exception $exception) {
             $this->error(
                 'Error initializing handler',
                 [
@@ -68,9 +68,9 @@ class RuntimeHandler
                     ]
                 );
                 $this->postResponse($response);
-            } catch (Throwable $exception) {
+            } catch (Exception $exception) {
                 $this->error(
-                    'Error processing event',
+                    'Error handling event',
                     [
                         'exception' => $exception,
                         'event' => $event ?? [],
@@ -161,7 +161,7 @@ class RuntimeHandler
         );
     }
 
-    private function postError(Throwable $exception): void
+    private function postError(Exception $exception): void
     {
         if ($this->client) {
             $this->info('Post error');
