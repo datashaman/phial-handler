@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Datashaman\Phial;
 
-use DI\ContainerBuilder;
 use Exception;
+use Invoker\InvokerInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
-use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -21,45 +20,46 @@ class RuntimeHandler implements RuntimeHandlerInterface
     use LoggerAwareTrait;
 
     /**
-     * @var ContainerInterface
-     */
-    private $container;
-
-    /**
      * @var ClientInterface
      */
     private $client;
+
+    /**
+     * @var RequestFactoryInterface
+     */
+    private $requestFactory;
+
+    /**
+     * @var StreamFactoryInterface
+     */
+    private $streamFactory;
 
     /**
      * @var string
      */
     private $requestId = '';
 
-    public function __construct()
-    {
-        try {
-            $this->container = $this->buildContainer();
-            $this->configureLogging();
-        } catch (Exception $exception) {
-            $this->error(
-                'Error initializing handler',
-                [
-                    'exception' => $exception,
-                ]
-            );
-            $this->postError($exception);
-        }
+    public function __construct(
+        ClientInterface $client,
+        RequestFactoryInterface $requestFactory,
+        StreamFactoryInterface $streamFactory,
+        ?LoggerInterface $logger = null
+    ) {
+        $this->client = $client;
+        $this->requestFactory = $requestFactory;
+        $this->streamFactory = $streamFactory;
+        $this->logger = $logger ?: new NullLogger();
     }
 
-    public function __invoke(): void
+    public function __invoke(InvokerInterface $invoker): void
     {
-        $this->info('Invoke handler event loop');
+        $this->logger->info('Invoke handler event loop');
 
         while (true) {
             try {
                 $event = $this->getNextInvocation();
                 $context = $this->createContext();
-                $response = $this->container->call(
+                $response = $invoker->call(
                     getenv('_HANDLER'),
                     [
                         'event' => $event,
@@ -68,7 +68,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
                 );
                 $this->postResponse($response);
             } catch (Exception $exception) {
-                $this->error(
+                $this->logger->error(
                     'Error handling event',
                     [
                         'exception' => $exception,
@@ -91,30 +91,9 @@ class RuntimeHandler implements RuntimeHandlerInterface
         return $this->requestId;
     }
 
-    private function configureLogging(): void
-    {
-        if ($this->container->has(LoggerInterface::class)) {
-            $this->logger = $this->container->get(LoggerInterface::class);
-            $this->info('Using container logger');
-        } else {
-            $this->logger = new NullLogger();
-        }
-    }
-
     private function createContext(): Context
     {
         return new Context($this);
-    }
-
-    private function buildContainer(): ContainerInterface
-    {
-        $containerBuilder = new ContainerBuilder();
-
-        if ($configPath = $this->taskPath('config.php')) {
-            $containerBuilder->addDefinitions($configPath);
-        }
-
-        return $containerBuilder->build();
     }
 
     private function sendRequest(
@@ -123,27 +102,24 @@ class RuntimeHandler implements RuntimeHandlerInterface
         array $headers = [],
         array $body = []
     ): ResponseInterface {
-        $request = $this->container->get(RequestFactoryInterface::class)
-            ->createRequest($method, $this->url($path));
+        $request = $this->requestFactory->createRequest($method, $this->url($path));
 
         foreach ($headers as $name => $value) {
             $request = $request->withHeader($name, $value);
         }
 
         if ($body) {
-            $stream = $this->container->get(StreamFactoryInterface::class)
-                ->createStream(json_encode($body, JSON_THROW_ON_ERROR));
+            $content = json_encode($body, JSON_THROW_ON_ERROR);
+            $stream = $this->streamFactory->createStream($content);
             $request = $request->withBody($stream);
         }
 
-        return $this->container
-            ->get(ClientInterface::class)
-            ->sendRequest($request);
+        return $this->client->sendRequest($request);
     }
 
     private function getNextInvocation(): array
     {
-        $this->info('Get next invocation');
+        $this->logger->info('Get next invocation');
         $response = $this->sendRequest('GET', 'runtime/invocation/next');
         $this->requestId = $response->getHeader('lambda-runtime-aws-request-id')[0];
         $body = (string) $response->getBody();
@@ -153,7 +129,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
 
     private function postResponse(array $response): void
     {
-        $this->info('Post response');
+        $this->logger->info('Post response');
 
         $this->sendRequest(
             'POST',
@@ -165,32 +141,30 @@ class RuntimeHandler implements RuntimeHandlerInterface
 
     private function postError(Exception $exception): void
     {
-        if ($this->client) {
-            $this->info('Post error');
+        $this->logger->info('Post error');
 
-            $path = $this->requestId
-                ? "runtime/invocation/{$this->requestId}/error"
-                : 'runtime/init/error';
+        $path = $this->requestId
+            ? "runtime/invocation/{$this->requestId}/error"
+            : 'runtime/init/error';
 
-            $error = [
-                'errorMessage' => sprintf(
-                    '%s %s:%d',
-                    $exception->getMessage(),
-                    $exception->getFile(),
-                    $exception->getLine()
-                ),
-                'errorType' => get_class($exception),
-            ];
+        $error = [
+            'errorMessage' => sprintf(
+                '%s %s:%d',
+                $exception->getMessage(),
+                $exception->getFile(),
+                $exception->getLine()
+            ),
+            'errorType' => get_class($exception),
+        ];
 
-            $this->sendRequest(
-                'POST',
-                $path,
-                [
-                    'Lambda-Runtime-Function-Error-Type' => 'Unhandled',
-                ],
-                $error
-            );
-        }
+        $this->sendRequest(
+            'POST',
+            $path,
+            [
+                'Lambda-Runtime-Function-Error-Type' => 'Unhandled',
+            ],
+            $error
+        );
 
         if (!$this->requestId) {
             exit(1);
@@ -216,19 +190,5 @@ class RuntimeHandler implements RuntimeHandlerInterface
                 $path
             )
         );
-    }
-
-    private function error(string $message, array $context = []): void
-    {
-        if ($this->logger) {
-            $this->logger->error($message, $context);
-        }
-    }
-
-    private function info(string $message, array $context = []): void
-    {
-        if ($this->logger) {
-            $this->logger->info($message, $context);
-        }
     }
 }
