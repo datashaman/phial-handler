@@ -12,10 +12,14 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
-class RuntimeHandler
+class RuntimeHandler implements RuntimeHandlerInterface
 {
+    use LoggerAwareTrait;
+
     /**
      * @var ContainerInterface
      */
@@ -27,11 +31,6 @@ class RuntimeHandler
     private $client;
 
     /**
-     * @var LoggerInterface
-     */
-    private $logger;
-
-    /**
      * @var string
      */
     private $requestId = '';
@@ -39,7 +38,7 @@ class RuntimeHandler
     public function __construct()
     {
         try {
-            $this->buildContainer();
+            $this->container = $this->buildContainer();
             $this->configureLogging();
         } catch (Exception $exception) {
             $this->error(
@@ -94,8 +93,12 @@ class RuntimeHandler
 
     private function configureLogging(): void
     {
-        $this->info('Configure logging');
-        $this->logger = $this->container->get(LoggerInterface::class);
+        if ($this->container->has(LoggerInterface::class)) {
+            $this->logger = $this->container->get(LoggerInterface::class);
+            $this->info('Using container logger');
+        } else {
+            $this->logger = new NullLogger();
+        }
     }
 
     private function createContext(): Context
@@ -103,17 +106,15 @@ class RuntimeHandler
         return new Context($this);
     }
 
-    private function buildContainer(): void
+    private function buildContainer(): ContainerInterface
     {
-        $this->info('Build container');
-
         $containerBuilder = new ContainerBuilder();
 
         if ($configPath = $this->taskPath('config.php')) {
             $containerBuilder->addDefinitions($configPath);
         }
 
-        $this->container = $containerBuilder->build();
+        return $containerBuilder->build();
     }
 
     private function sendRequest(
@@ -154,7 +155,7 @@ class RuntimeHandler
     {
         $this->info('Post response');
 
-        $response = $this->sendRequest(
+        $this->sendRequest(
             'POST',
             "runtime/invocation/{$this->requestId}/response",
             [],
@@ -181,7 +182,7 @@ class RuntimeHandler
                 'errorType' => get_class($exception),
             ];
 
-            $response = $this->sendRequest(
+            $this->sendRequest(
                 'POST',
                 $path,
                 [
