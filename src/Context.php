@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Datashaman\Phial;
 
+use Exception;
 use Psr\Log\LoggerInterface;
 
-class Context
+class Context implements ContextInterface
 {
     /**
      * @var RuntimeHandler
@@ -20,6 +21,7 @@ class Context
 
     public function getRemainingTimeInMillis(): int
     {
+        throw new Exception('Not implemented');
     }
 
     public function getFunctionName(): string
@@ -34,6 +36,7 @@ class Context
 
     public function getInvokedFunctionArn(): string
     {
+        throw new Exception('Not implemented');
     }
 
     public function getMemoryLimitInMB(): int
@@ -43,7 +46,7 @@ class Context
 
     public function getAwsRequestId(): string
     {
-        return $this->handler->getRequestId();
+        return $this->handler->getAwsRequestId();
     }
 
     public function getLogGroupName(): string

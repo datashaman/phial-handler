@@ -35,19 +35,26 @@ class RuntimeHandler implements RuntimeHandlerInterface
     private $streamFactory;
 
     /**
+     * @var ContextFactoryInterface
+     */
+    private $contextFactory;
+
+    /**
      * @var string
      */
-    private $requestId = '';
+    private $awsRequestId = '';
 
     public function __construct(
         ClientInterface $client,
         RequestFactoryInterface $requestFactory,
         StreamFactoryInterface $streamFactory,
+        ?ContextFactoryInterface $contextFactory = null,
         ?LoggerInterface $logger = null
     ) {
         $this->client = $client;
         $this->requestFactory = $requestFactory;
         $this->streamFactory = $streamFactory;
+        $this->contextFactory = $contextFactory ?: new ContextFactory();
         $this->logger = $logger ?: new NullLogger();
     }
 
@@ -86,14 +93,14 @@ class RuntimeHandler implements RuntimeHandlerInterface
         return $this->logger;
     }
 
-    public function getRequestId(): string
+    public function getAwsRequestId(): string
     {
-        return $this->requestId;
+        return $this->awsRequestId;
     }
 
     private function createContext(): Context
     {
-        return new Context($this);
+        return $this->contextFactory->createContext($this);
     }
 
     private function sendRequest(
@@ -121,7 +128,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
     {
         $this->logger->info('Get next invocation');
         $response = $this->sendRequest('GET', 'runtime/invocation/next');
-        $this->requestId = $response->getHeader('lambda-runtime-aws-request-id')[0];
+        $this->awsRequestId = $response->getHeader('lambda-runtime-aws-request-id')[0];
         $body = (string) $response->getBody();
 
         return json_decode($body, true, 512, JSON_THROW_ON_ERROR);
@@ -133,7 +140,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
 
         $this->sendRequest(
             'POST',
-            "runtime/invocation/{$this->requestId}/response",
+            "runtime/invocation/{$this->awsRequestId}/response",
             [],
             $response
         );
@@ -143,8 +150,8 @@ class RuntimeHandler implements RuntimeHandlerInterface
     {
         $this->logger->info('Post error');
 
-        $path = $this->requestId
-            ? "runtime/invocation/{$this->requestId}/error"
+        $path = $this->awsRequestId
+            ? "runtime/invocation/{$this->awsRequestId}/error"
             : 'runtime/init/error';
 
         $error = [
@@ -155,6 +162,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
                 $exception->getLine()
             ),
             'errorType' => get_class($exception),
+            'stackTrace' => $exception->getTrace(),
         ];
 
         $this->sendRequest(
@@ -166,7 +174,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
             $error
         );
 
-        if (!$this->requestId) {
+        if (!$this->awsRequestId) {
             exit(1);
         }
     }
