@@ -48,14 +48,14 @@ class RuntimeHandler implements RuntimeHandlerInterface
         ClientInterface $client,
         RequestFactoryInterface $requestFactory,
         StreamFactoryInterface $streamFactory,
-        ContextFactoryInterface $contextFactory = null,
-        LoggerInterface $logger = null
+        LoggerInterface $logger,
+        ContextFactoryInterface $contextFactory
     ) {
         $this->client = $client;
         $this->requestFactory = $requestFactory;
         $this->streamFactory = $streamFactory;
-        $this->contextFactory = $contextFactory ?: new ContextFactory();
-        $this->logger = $logger ?: new NullLogger();
+        $this->logger = $logger;
+        $this->contextFactory = $contextFactory;
     }
 
     public function __invoke(InvokerInterface $invoker): void
