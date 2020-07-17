@@ -48,8 +48,8 @@ class RuntimeHandler implements RuntimeHandlerInterface
         ClientInterface $client,
         RequestFactoryInterface $requestFactory,
         StreamFactoryInterface $streamFactory,
-        ?ContextFactoryInterface $contextFactory = null,
-        ?LoggerInterface $logger = null
+        ContextFactoryInterface $contextFactory = null,
+        LoggerInterface $logger = null
     ) {
         $this->client = $client;
         $this->requestFactory = $requestFactory;
