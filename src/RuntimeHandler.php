@@ -60,7 +60,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
 
     public function __invoke(InvokerInterface $invoker): void
     {
-        $this->logger->info('Invoke handler event loop');
+        $this->logger->debug('Invoke handler event loop');
 
         while (true) {
             try {
@@ -126,7 +126,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
 
     private function getNextInvocation(): array
     {
-        $this->logger->info('Get next invocation');
+        $this->logger->debug('Get next invocation');
         $response = $this->sendRequest('GET', 'runtime/invocation/next');
         $this->awsRequestId = $response->getHeader('lambda-runtime-aws-request-id')[0];
         $body = (string) $response->getBody();
@@ -136,7 +136,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
 
     private function postResponse(array $response): void
     {
-        $this->logger->info('Post response');
+        $this->logger->debug('Post response');
 
         $this->sendRequest(
             'POST',
@@ -148,7 +148,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
 
     private function postError(Exception $exception): void
     {
-        $this->logger->info('Post error');
+        $this->logger->debug('Post error');
 
         $path = $this->awsRequestId
             ? "runtime/invocation/{$this->awsRequestId}/error"
