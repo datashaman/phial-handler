@@ -162,7 +162,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
                 $exception->getLine()
             ),
             'errorType' => get_class($exception),
-            'stackTrace' => $exception->getTrace(),
+            'trace' => $exception->getTrace(),
         ];
 
         $this->sendRequest(
