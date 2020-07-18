@@ -73,8 +73,6 @@ class RuntimeHandler implements RuntimeHandlerInterface
                 $response = $this->invokeHandler($context, $event);
                 $this->postResponse($context, $response);
             } catch (Exception $exception) {
-                $context = $context ?? null;
-
                 $this->logger->error(
                     'Error handling event',
                     [
@@ -83,7 +81,8 @@ class RuntimeHandler implements RuntimeHandlerInterface
                         'response' => $response ?? [],
                     ]
                 );
-                $this->postError($context, $exception);
+
+                $this->postError($context ?? null, $exception);
             }
         }
     }
