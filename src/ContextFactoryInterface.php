@@ -7,7 +7,7 @@ namespace Datashaman\Phial;
 interface ContextFactoryInterface
 {
     /**
-     * @param RuntimeHandlerInterface
+     * @param RuntimeHandlerInterface $handler
      *
      * @return ContextInterface
      */

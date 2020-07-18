@@ -10,11 +10,11 @@ use Psr\Log\LoggerInterface;
 class Context implements ContextInterface
 {
     /**
-     * @var RuntimeHandler
+     * @var RuntimeHandlerInterface
      */
     private $handler;
 
-    public function __construct(RuntimeHandler $handler)
+    public function __construct(RuntimeHandlerInterface $handler)
     {
         $this->handler = $handler;
     }

@@ -35,6 +35,11 @@ class RuntimeHandler implements RuntimeHandlerInterface
     private $streamFactory;
 
     /**
+     * @var InvokerInterface
+     */
+    private $invoker;
+
+    /**
      * @var ContextFactoryInterface
      */
     private $contextFactory;
@@ -48,17 +53,19 @@ class RuntimeHandler implements RuntimeHandlerInterface
         ClientInterface $client,
         RequestFactoryInterface $requestFactory,
         StreamFactoryInterface $streamFactory,
+        InvokerInterface $invoker,
         LoggerInterface $logger,
         ContextFactoryInterface $contextFactory
     ) {
         $this->client = $client;
         $this->requestFactory = $requestFactory;
         $this->streamFactory = $streamFactory;
+        $this->invoker = $invoker;
         $this->logger = $logger;
         $this->contextFactory = $contextFactory;
     }
 
-    public function __invoke(InvokerInterface $invoker): void
+    public function __invoke(): void
     {
         $this->logger->debug('Invoke handler event loop');
 
@@ -66,13 +73,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
             try {
                 $event = $this->getNextInvocation();
                 $context = $this->createContext();
-                $response = $invoker->call(
-                    getenv('_HANDLER'),
-                    [
-                        'event' => $event,
-                        'context' => $context,
-                    ]
-                );
+                $response = $this->invokeHandler($event, $context);
                 $this->postResponse($response);
             } catch (Exception $exception) {
                 $this->logger->error(
@@ -98,9 +99,22 @@ class RuntimeHandler implements RuntimeHandlerInterface
         return $this->awsRequestId;
     }
 
-    private function createContext(): Context
+    private function createContext(): ContextInterface
     {
         return $this->contextFactory->createContext($this);
+    }
+
+    private function invokeHandler(
+        array $event,
+        ContextInterface $context
+    ) {
+        return $this->invoker->call(
+            getenv('_HANDLER'),
+            [
+                'event' => $event,
+                'context' => $context,
+            ]
+        );
     }
 
     private function sendRequest(
@@ -154,7 +168,24 @@ class RuntimeHandler implements RuntimeHandlerInterface
             ? "runtime/invocation/{$this->awsRequestId}/error"
             : 'runtime/init/error';
 
-        $error = [
+        $this->sendRequest(
+            'POST',
+            $path,
+            [
+                'Lambda-Runtime-Function-Error-Type' => 'Unhandled',
+            ],
+            $this->transformException($exception)
+        );
+
+        if (!$this->awsRequestId) {
+            $this->logger->debug('Error with no AWS Request ID, exiting');
+            exit(1);
+        }
+    }
+
+    private function transformException(Exception $exception)
+    {
+        return [
             'errorMessage' => sprintf(
                 '%s %s:%d',
                 $exception->getMessage(),
@@ -164,19 +195,6 @@ class RuntimeHandler implements RuntimeHandlerInterface
             'errorType' => get_class($exception),
             'trace' => $exception->getTrace(),
         ];
-
-        $this->sendRequest(
-            'POST',
-            $path,
-            [
-                'Lambda-Runtime-Function-Error-Type' => 'Unhandled',
-            ],
-            $error
-        );
-
-        if (!$this->awsRequestId) {
-            exit(1);
-        }
     }
 
     private function url(string $path): string
