@@ -80,14 +80,14 @@ class Context implements
     {
         $header = $this->response->getHeader('lambda-runtime-cognito-identity')[0];
 
-        return json_decode($header, true);
+        return json_decode($header, true, 512, JSON_THROW_ON_ERROR);
     }
 
     public function getClientContext(): array
     {
         $header = $this->response->getHeader('lambda-runtime-client-context')[0];
 
-        return json_decode($header, true);
+        return json_decode($header, true, 512, JSON_THROW_ON_ERROR);
     }
 
     public function getLogger(): LoggerInterface

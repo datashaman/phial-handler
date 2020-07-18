@@ -121,13 +121,11 @@ class RuntimeHandler implements RuntimeHandlerInterface
 
     /**
      * @param array<string> $event
-     *
-     * @return array<string>
      */
     private function invokeHandler(
         ContextInterface $context,
         array $event
-    ): array {
+    ) {
         /** @var callable */
         $handler = $this->getEnv('_HANDLER');
 
@@ -140,12 +138,9 @@ class RuntimeHandler implements RuntimeHandlerInterface
         );
     }
 
-    /**
-     * @param array<string> $response
-     */
     private function postResponse(
         ContextInterface $context,
-        array $response
+        string $response
     ): void {
         $this->logger->debug('Post response');
 
@@ -159,13 +154,12 @@ class RuntimeHandler implements RuntimeHandlerInterface
 
     /**
      * @param array<string> $headers
-     * @param array<array|string> $body
      */
     private function sendRequest(
         string $method,
         string $path,
         array $headers = [],
-        array $body = []
+        ?string $body = null
     ): ResponseInterface {
         $request = $this->requestFactory->createRequest($method, $this->url($path));
 
@@ -173,9 +167,8 @@ class RuntimeHandler implements RuntimeHandlerInterface
             $request = $request->withHeader($name, $value);
         }
 
-        if ($body) {
-            $content = json_encode($body, JSON_THROW_ON_ERROR);
-            $stream = $this->streamFactory->createStream($content);
+        if (is_string($body)) {
+            $stream = $this->streamFactory->createStream($body);
             $request = $request->withBody($stream);
         }
 
@@ -210,20 +203,22 @@ class RuntimeHandler implements RuntimeHandlerInterface
     }
 
     /**
-     * @return array<string, array|string>
+     * @return string
      */
-    private function transformException(Exception $exception): array
+    private function transformException(Exception $exception): string
     {
-        return [
-            'errorMessage' => sprintf(
-                '%s %s:%d',
-                $exception->getMessage(),
-                $exception->getFile(),
-                $exception->getLine()
-            ),
-            'errorType' => get_class($exception),
-            'trace' => $exception->getTrace(),
-        ];
+        return json_encode(
+            [
+                'errorMessage' => sprintf(
+                    '%s %s:%d',
+                    $exception->getMessage(),
+                    $exception->getFile(),
+                    $exception->getLine()
+                ),
+                'errorType' => get_class($exception),
+                'trace' => $exception->getTrace(),
+            ], JSON_THROW_ON_ERROR
+        );
     }
 
     private function url(string $path): string
