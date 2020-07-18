@@ -1,0 +1,15 @@
+---
+name: build
+
+on:
+  - push
+
+jobs:
+  phpstan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: phpstan
+        uses: docker://oskarstark/phpstan-ga
+        with:
+          args: analyse src/ --level=8
