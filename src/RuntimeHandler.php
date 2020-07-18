@@ -17,6 +17,7 @@ use Psr\Log\NullLogger;
 
 class RuntimeHandler implements RuntimeHandlerInterface
 {
+    use ContextTrait;
     use LoggerAwareTrait;
 
     /**
@@ -44,11 +45,6 @@ class RuntimeHandler implements RuntimeHandlerInterface
      */
     private $contextFactory;
 
-    /**
-     * @var string
-     */
-    private $awsRequestId = '';
-
     public function __construct(
         ClientInterface $client,
         RequestFactoryInterface $requestFactory,
@@ -71,11 +67,14 @@ class RuntimeHandler implements RuntimeHandlerInterface
 
         while (true) {
             try {
-                $event = $this->getNextInvocation();
-                $context = $this->createContext();
-                $response = $this->invokeHandler($event, $context);
-                $this->postResponse($response);
+                $response = $this->getNextInvocation();
+                $event = $this->getEvent($response);
+                $context = $this->createContext($response);
+                $response = $this->invokeHandler($context, $event);
+                $this->postResponse($context, $response);
             } catch (Exception $exception) {
+                $context = $context ?? null;
+
                 $this->logger->error(
                     'Error handling event',
                     [
@@ -84,7 +83,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
                         'response' => $response ?? [],
                     ]
                 );
-                $this->postError($exception);
+                $this->postError($context, $exception);
             }
         }
     }
@@ -94,22 +93,24 @@ class RuntimeHandler implements RuntimeHandlerInterface
         return $this->logger;
     }
 
-    public function getAwsRequestId(): string
+    private function createContext(ResponseInterface $response): ContextInterface
     {
-        return $this->awsRequestId;
+        $awsRequestId = $response->getHeader('lambda-runtime-aws-request-id')[0];
+
+        return $this->contextFactory->createContext($awsRequestId, $this->logger);
     }
 
-    private function createContext(): ContextInterface
-    {
-        return $this->contextFactory->createContext($this);
-    }
-
+    /**
+     * @param array<string> $event
+     *
+     * @return array<string>
+     */
     private function invokeHandler(
-        array $event,
-        ContextInterface $context
-    ) {
+        ContextInterface $context,
+        array $event
+    ): array {
         return $this->invoker->call(
-            getenv('_HANDLER'),
+            $this->getEnv('_HANDLER'),
             [
                 'event' => $event,
                 'context' => $context,
@@ -117,6 +118,10 @@ class RuntimeHandler implements RuntimeHandlerInterface
         );
     }
 
+    /**
+     * @param array<string> $headers
+     * @param array<array|string> $body
+     */
     private function sendRequest(
         string $method,
         string $path,
@@ -138,34 +143,50 @@ class RuntimeHandler implements RuntimeHandlerInterface
         return $this->client->sendRequest($request);
     }
 
-    private function getNextInvocation(): array
+    private function getNextInvocation(): ResponseInterface
     {
         $this->logger->debug('Get next invocation');
-        $response = $this->sendRequest('GET', 'runtime/invocation/next');
-        $this->awsRequestId = $response->getHeader('lambda-runtime-aws-request-id')[0];
+
+        return $this->sendRequest('GET', 'runtime/invocation/next');
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function getEvent(ResponseInterface $response): array
+    {
         $body = (string) $response->getBody();
 
         return json_decode($body, true, 512, JSON_THROW_ON_ERROR);
     }
 
-    private function postResponse(array $response): void
-    {
+    /**
+     * @param array<string> $response
+     */
+    private function postResponse(
+        ContextInterface $context,
+        array $response
+    ): void {
         $this->logger->debug('Post response');
 
         $this->sendRequest(
             'POST',
-            "runtime/invocation/{$this->awsRequestId}/response",
+            "runtime/invocation/{$context->getAwsRequestId()}/response",
             [],
             $response
         );
     }
 
-    private function postError(Exception $exception): void
+    private function postError(?ContextInterface $context, Exception $exception): void
     {
         $this->logger->debug('Post error');
 
-        $path = $this->awsRequestId
-            ? "runtime/invocation/{$this->awsRequestId}/error"
+        $awsRequestId = $context
+            ? $context->getAwsRequestId()
+            : null;
+
+        $path = $awsRequestId
+            ? "runtime/invocation/{$awsRequestId}/error"
             : 'runtime/init/error';
 
         $this->sendRequest(
@@ -177,13 +198,16 @@ class RuntimeHandler implements RuntimeHandlerInterface
             $this->transformException($exception)
         );
 
-        if (!$this->awsRequestId) {
+        if (!$awsRequestId) {
             $this->logger->debug('Error with no AWS Request ID, exiting');
             exit(1);
         }
     }
 
-    private function transformException(Exception $exception)
+    /**
+     * @return array<string, array|string>
+     */
+    private function transformException(Exception $exception): array
     {
         return [
             'errorMessage' => sprintf(
@@ -208,7 +232,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
 
     private function taskPath(string $path = ''): string
     {
-        return realpath(
+        $path = realpath(
             sprintf(
                 '%s%s%s',
                 getenv('LAMBDA_TASK_ROOT'),
@@ -216,5 +240,11 @@ class RuntimeHandler implements RuntimeHandlerInterface
                 $path
             )
         );
+
+        if ($path) {
+            return $path;
+        }
+
+        throw new Exception('File not found: ' . $path);
     }
 }

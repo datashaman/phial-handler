@@ -9,14 +9,22 @@ use Psr\Log\LoggerInterface;
 
 class Context implements ContextInterface
 {
-    /**
-     * @var RuntimeHandlerInterface
-     */
-    private $handler;
+    use ContextTrait;
 
-    public function __construct(RuntimeHandlerInterface $handler)
+    /**
+     * @var string
+     */
+    private $awsRequestId;
+
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    public function __construct(string $awsRequestId, LoggerInterface $logger)
     {
-        $this->handler = $handler;
+        $this->awsRequestId = $awsRequestId;
+        $this->logger = $logger;
     }
 
     public function getRemainingTimeInMillis(): int
@@ -26,12 +34,12 @@ class Context implements ContextInterface
 
     public function getFunctionName(): string
     {
-        return getenv('AWS_LAMBDA_FUNCTION_NAME');
+        return $this->getEnv('AWS_LAMBDA_FUNCTION_NAME');
     }
 
     public function getFunctionVersion(): string
     {
-        return getenv('AWS_LAMBDA_FUNCTION_VERSION');
+        return $this->getEnv('AWS_LAMBDA_FUNCTION_VERSION');
     }
 
     public function getInvokedFunctionArn(): string
@@ -41,26 +49,26 @@ class Context implements ContextInterface
 
     public function getMemoryLimitInMB(): int
     {
-        return (int) getenv('AWS_LAMBDA_FUNCTION_MEMORY_SIZE');
+        return (int) $this->getEnv('AWS_LAMBDA_FUNCTION_MEMORY_SIZE');
     }
 
     public function getAwsRequestId(): string
     {
-        return $this->handler->getAwsRequestId();
+        return $this->awsRequestId;
     }
 
     public function getLogGroupName(): string
     {
-        return getenv('AWS_LAMBDA_LOG_GROUP_NAME');
+        return $this->getEnv('AWS_LAMBDA_LOG_GROUP_NAME');
     }
 
     public function getLogStreamName(): string
     {
-        return getenv('AWS_LAMBDA_LOG_STREAM_NAME');
+        return $this->getEnv('AWS_LAMBDA_LOG_STREAM_NAME');
     }
 
     public function getLogger(): LoggerInterface
     {
-        return $this->handler->getLogger();
+        return $this->logger;
     }
 }
