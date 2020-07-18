@@ -78,12 +78,16 @@ class Context implements
 
     public function getIdentity(): array
     {
-        throw new Exception('Not implemented');
+        $header = $this->response->getHeader('lambda-runtime-cognito-identity')[0];
+
+        return json_decode($header, true);
     }
 
     public function getClientContext(): array
     {
-        throw new Exception('Not implemented');
+        $header = $this->response->getHeader('lambda-runtime-client-context')[0];
+
+        return json_decode($header, true);
     }
 
     public function getLogger(): LoggerInterface
