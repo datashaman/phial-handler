@@ -11,14 +11,12 @@ use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
-use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 class RuntimeHandler implements RuntimeHandlerInterface
 {
     use EnvironmentTrait;
-    use LoggerAwareTrait;
 
     /**
      * @var ClientInterface
@@ -39,6 +37,11 @@ class RuntimeHandler implements RuntimeHandlerInterface
      * @var InvokerInterface
      */
     private $invoker;
+
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
 
     /**
      * @var ContextFactoryInterface
@@ -85,11 +88,6 @@ class RuntimeHandler implements RuntimeHandlerInterface
                 $this->postError($context ?? null, $exception);
             }
         }
-    }
-
-    public function getLogger(): LoggerInterface
-    {
-        return $this->logger;
     }
 
     private function createContext(ResponseInterface $response): ContextInterface
