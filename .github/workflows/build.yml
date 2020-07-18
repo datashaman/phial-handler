@@ -16,4 +16,4 @@ jobs:
       - name: publish
         uses: swinton/httpie.action@master
         with:
-          args: ["GET", ${{ secrets.WEBHOOK_URL }}, "deployment=finished", "project=phial-handler"]]
+          args: ["GET", "${{ secrets.WEBHOOK_URL }}", "deployment=finished", "project=phial-handler"]
