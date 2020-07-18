@@ -17,4 +17,4 @@ jobs:
         uses: joelwmale/webhook-action@master
         env:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
-          data: ${{ secrets.WEBHOOK_DATA }}
+          data: "{'deployment':'finished', 'project': 'phial-handler'}"
