@@ -109,8 +109,11 @@ class RuntimeHandler implements RuntimeHandlerInterface
         ContextInterface $context,
         array $event
     ): array {
+        /** @var callable */
+        $handler = $this->getEnv('_HANDLER');
+
         return $this->invoker->call(
-            $this->getEnv('_HANDLER'),
+            $handler,
             [
                 'event' => $event,
                 'context' => $context,
