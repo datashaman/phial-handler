@@ -19,4 +19,4 @@ jobs:
       - name: publish
         uses: wei/curl@master
         with:
-          args: -X POST -d{'"deployment":"finished","project":"phial-handler"}' ${{ secrets.WEBHOOK_URL }}
+          args: -X POST -d'{"repository":{"url":"https://packagist.org/packages/datashaman/phial-handler"}}' "${{ secrets.WEBHOOK_URL }}"
