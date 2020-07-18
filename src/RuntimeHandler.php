@@ -72,6 +72,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
             try {
                 $response = $this->getNextInvocation();
                 $event = $this->getEvent($response);
+                $this->propagateTraceId($response);
                 $context = $this->createContext($response);
                 $response = $this->invokeHandler($context, $event);
                 $this->postResponse($context, $response);
@@ -88,6 +89,29 @@ class RuntimeHandler implements RuntimeHandlerInterface
                 $this->postError($context ?? null, $exception);
             }
         }
+    }
+
+    private function getNextInvocation(): ResponseInterface
+    {
+        $this->logger->debug('Get next invocation');
+
+        return $this->sendRequest('GET', 'runtime/invocation/next');
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function getEvent(ResponseInterface $response): array
+    {
+        $body = (string) $response->getBody();
+
+        return json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+    }
+
+    private function propagateTraceId(ResponseInterface $response): void
+    {
+        $traceId = $response->getHeader('lambda-runtime-trace-id ')[0];
+        putenv("_X_AMZN_TRACE_ID=$traceId");
     }
 
     private function createContext(ResponseInterface $response): ContextInterface
@@ -119,6 +143,23 @@ class RuntimeHandler implements RuntimeHandlerInterface
     }
 
     /**
+     * @param array<string> $response
+     */
+    private function postResponse(
+        ContextInterface $context,
+        array $response
+    ): void {
+        $this->logger->debug('Post response');
+
+        $this->sendRequest(
+            'POST',
+            "runtime/invocation/{$context->getAwsRequestId()}/response",
+            [],
+            $response
+        );
+    }
+
+    /**
      * @param array<string> $headers
      * @param array<array|string> $body
      */
@@ -141,40 +182,6 @@ class RuntimeHandler implements RuntimeHandlerInterface
         }
 
         return $this->client->sendRequest($request);
-    }
-
-    private function getNextInvocation(): ResponseInterface
-    {
-        $this->logger->debug('Get next invocation');
-
-        return $this->sendRequest('GET', 'runtime/invocation/next');
-    }
-
-    /**
-     * @return array<string>
-     */
-    private function getEvent(ResponseInterface $response): array
-    {
-        $body = (string) $response->getBody();
-
-        return json_decode($body, true, 512, JSON_THROW_ON_ERROR);
-    }
-
-    /**
-     * @param array<string> $response
-     */
-    private function postResponse(
-        ContextInterface $context,
-        array $response
-    ): void {
-        $this->logger->debug('Post response');
-
-        $this->sendRequest(
-            'POST',
-            "runtime/invocation/{$context->getAwsRequestId()}/response",
-            [],
-            $response
-        );
     }
 
     private function postError(?ContextInterface $context, Exception $exception): void
