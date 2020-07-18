@@ -121,6 +121,8 @@ class RuntimeHandler implements RuntimeHandlerInterface
 
     /**
      * @param array<string> $event
+     *
+     * @return mixed
      */
     private function invokeHandler(
         ContextInterface $context,
