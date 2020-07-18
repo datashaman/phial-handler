@@ -14,6 +14,6 @@ jobs:
         with:
           args: analyse src/ --level=8
       - name: publish
-        uses: swinton/httpie.action@master
+        uses: wei/curl@master
         with:
-          args: ["GET", "${{ secrets.WEBHOOK_URL }}", "deployment=finished", "project=phial-handler"]
+          args: -X GET -d{'"deployment":"finished","project":"phial-handler"}' ${{ secrets.WEBHOOK_URL }}
