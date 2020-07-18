@@ -74,8 +74,8 @@ class RuntimeHandler implements RuntimeHandlerInterface
                 $event = $this->getEvent($response);
                 $this->propagateTraceId($response);
                 $context = $this->createContext($response);
-                $response = $this->invokeHandler($context, $event);
-                $this->postResponse($context, $response);
+                $response = $this->invokeHandler($event, $context);
+                $this->postResponse($response, $context);
             } catch (Exception $exception) {
                 $this->logger->error(
                     'Error handling event',
@@ -125,8 +125,8 @@ class RuntimeHandler implements RuntimeHandlerInterface
      * @return mixed
      */
     private function invokeHandler(
-        ContextInterface $context,
-        array $event
+        array $event,
+        ContextInterface $context
     ) {
         /** @var callable */
         $handler = $this->getEnv('_HANDLER');
@@ -141,8 +141,8 @@ class RuntimeHandler implements RuntimeHandlerInterface
     }
 
     private function postResponse(
-        ContextInterface $context,
-        string $response
+        string $response,
+        ContextInterface $context
     ): void {
         $this->logger->debug('Post response');
 
