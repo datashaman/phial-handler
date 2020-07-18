@@ -13,3 +13,8 @@ jobs:
         uses: docker://oskarstark/phpstan-ga
         with:
           args: analyse src/ --level=8
+      - name: publish
+        uses: joelwmale/webhook-action@master
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          data: ${{ secrets.WEBHOOK_DATA }}
