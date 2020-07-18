@@ -16,5 +16,7 @@ interface ContextInterface
     public function getAwsRequestId(): string;
     public function getLogGroupName(): string;
     public function getLogStreamName(): string;
+    public function getIdentity(): array;
+    public function getClientContext(): array;
     public function getLogger(): LoggerInterface;
 }

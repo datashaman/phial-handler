@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Datashaman\Phial;
 
 use Exception;
+use JsonSerializable;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 
-class Context implements ContextInterface
+class Context implements
+    ContextInterface,
+    JsonSerializable
 {
     use EnvironmentTrait;
 
@@ -26,14 +29,6 @@ class Context implements ContextInterface
     {
         $this->response = $response;
         $this->logger = $logger;
-    }
-
-    private function getTimeinMillis(): int
-    {
-        $microtime = microtime();
-        $parts = explode(' ', $microtime);
-
-        return (int) sprintf('%d%03d', $parts[1], (int) $parts[0] * 1000);
     }
 
     public function getRemainingTimeInMillis(): int
@@ -81,8 +76,41 @@ class Context implements ContextInterface
         return $this->getEnv('AWS_LAMBDA_LOG_STREAM_NAME');
     }
 
+    public function getIdentity(): array
+    {
+        throw new Exception('Not implemented');
+    }
+
+    public function getClientContext(): array
+    {
+        throw new Exception('Not implemented');
+    }
+
     public function getLogger(): LoggerInterface
     {
         return $this->logger;
+    }
+
+    public function jsonSerialize()
+    {
+        return [
+            'functionName' => $this->getFunctionName(),
+            'functionVersion' => $this->getFunctionVersion(),
+            'invokedFunctionArn' => $this->getInvokedFunctionArn(),
+            'memoryLimitInMB' => $this->getMemoryLimitInMB(),
+            'awsRequestId' => $this->getAwsRequestId(),
+            'logGroupName' => $this->getLogGroupName(),
+            'logStreamName' => $this->getLogStreamName(),
+            'identity' => [],
+            'clientContext' => [],
+        ];
+    }
+
+    private function getTimeinMillis(): int
+    {
+        $microtime = microtime();
+        $parts = explode(' ', $microtime);
+
+        return (int) sprintf('%d%03d', $parts[1], (int) $parts[0] * 1000);
     }
 }
