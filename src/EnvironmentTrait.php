@@ -6,7 +6,7 @@ namespace Datashaman\Phial;
 
 use Exception;
 
-trait ContextTrait
+trait EnvironmentTrait
 {
     private function getEnv(string $varname): string
     {

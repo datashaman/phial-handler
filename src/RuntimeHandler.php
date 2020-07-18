@@ -17,7 +17,7 @@ use Psr\Log\NullLogger;
 
 class RuntimeHandler implements RuntimeHandlerInterface
 {
-    use ContextTrait;
+    use EnvironmentTrait;
     use LoggerAwareTrait;
 
     /**

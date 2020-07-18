@@ -9,7 +9,7 @@ use Psr\Log\LoggerInterface;
 
 class Context implements ContextInterface
 {
-    use ContextTrait;
+    use EnvironmentTrait;
 
     /**
      * @var string
