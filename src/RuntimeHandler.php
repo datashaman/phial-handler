@@ -116,9 +116,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
 
     private function createContext(ResponseInterface $response): ContextInterface
     {
-        $awsRequestId = $response->getHeader('lambda-runtime-aws-request-id')[0];
-
-        return $this->contextFactory->createContext($awsRequestId, $this->logger);
+        return $this->contextFactory->createContext($response, $this->logger);
     }
 
     /**

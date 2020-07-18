@@ -4,20 +4,21 @@ declare(strict_types=1);
 
 namespace Datashaman\Phial;
 
+use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 
 class ContextFactory implements ContextFactoryInterface
 {
     /**
-     * @param string $awsRequestId
+     * @param ResponseInterface $response
      * @param LoggerInterface $logger
      *
      * @return ContextInterface
      */
     public function createContext(
-        string $awsRequestId,
+        ResponseInterface $response,
         LoggerInterface $logger
     ): ContextInterface {
-        return new Context($awsRequestId, $logger);
+        return new Context($response, $logger);
     }
 }

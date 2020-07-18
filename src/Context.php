@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Datashaman\Phial;
 
 use Exception;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 
 class Context implements ContextInterface
@@ -12,9 +13,9 @@ class Context implements ContextInterface
     use EnvironmentTrait;
 
     /**
-     * @var string
+     * @var ResponseInterface $response
      */
-    private $awsRequestId;
+    private $response;
 
     /**
      * @var LoggerInterface
@@ -27,9 +28,22 @@ class Context implements ContextInterface
         $this->logger = $logger;
     }
 
-    public function getRemainingTimeInMillis(): int
+    private function getTimeinMillis(): double
     {
-        throw new Exception('Not implemented');
+        $microtime = microtime();
+        $parts = explode(' ', $microtime);
+
+        return (double) sprintf('%d%03d', $parts[1], $parts[0] * 1000);
+    }
+
+    public function getRemainingTimeInMillis(): double
+    {
+        $deadline = (double) $this
+            ->response
+            ->getHeader('lambda-runtime-deadline-ms');
+        $time = $this->getTimeinMillis();
+
+        return $deadline - $time;
     }
 
     public function getFunctionName(): string
@@ -44,7 +58,7 @@ class Context implements ContextInterface
 
     public function getInvokedFunctionArn(): string
     {
-        throw new Exception('Not implemented');
+        return $this->response->getHeader('lambda-runtime-invoked-function-Arn');
     }
 
     public function getMemoryLimitInMB(): int
