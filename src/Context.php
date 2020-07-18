@@ -76,6 +76,9 @@ class Context implements
         return $this->getEnv('AWS_LAMBDA_LOG_STREAM_NAME');
     }
 
+    /**
+     * @return array<string>
+     */
     public function getIdentity(): array
     {
         $header = $this->response->getHeader('lambda-runtime-cognito-identity')[0];
@@ -83,6 +86,9 @@ class Context implements
         return json_decode($header, true, 512, JSON_THROW_ON_ERROR);
     }
 
+    /**
+     * @return array<string>
+     */
     public function getClientContext(): array
     {
         $header = $this->response->getHeader('lambda-runtime-client-context')[0];
