@@ -22,25 +22,25 @@ class Context implements ContextInterface
      */
     private $logger;
 
-    public function __construct(string $awsRequestId, LoggerInterface $logger)
+    public function __construct(ResponseInterface $response, LoggerInterface $logger)
     {
-        $this->awsRequestId = $awsRequestId;
+        $this->response = $response;
         $this->logger = $logger;
     }
 
-    private function getTimeinMillis(): double
+    private function getTimeinMillis(): int
     {
         $microtime = microtime();
         $parts = explode(' ', $microtime);
 
-        return (double) sprintf('%d%03d', $parts[1], $parts[0] * 1000);
+        return (int) sprintf('%d%03d', $parts[1], (int) $parts[0] * 1000);
     }
 
-    public function getRemainingTimeInMillis(): double
+    public function getRemainingTimeInMillis(): int
     {
-        $deadline = (double) $this
+        $deadline = (int) $this
             ->response
-            ->getHeader('lambda-runtime-deadline-ms');
+            ->getHeader('lambda-runtime-deadline-ms')[0];
         $time = $this->getTimeinMillis();
 
         return $deadline - $time;
@@ -58,7 +58,7 @@ class Context implements ContextInterface
 
     public function getInvokedFunctionArn(): string
     {
-        return $this->response->getHeader('lambda-runtime-invoked-function-Arn');
+        return $this->response->getHeader('lambda-runtime-invoked-function-Arn')[0];
     }
 
     public function getMemoryLimitInMB(): int
@@ -68,7 +68,7 @@ class Context implements ContextInterface
 
     public function getAwsRequestId(): string
     {
-        return $this->awsRequestId;
+        return $this->response->getHeader('lambda-runtime-aws-request-id')[0];
     }
 
     public function getLogGroupName(): string
