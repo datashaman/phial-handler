@@ -36,6 +36,9 @@ class Context implements
         return $this->toArray();
     }
 
+    /**
+     * @return array<string, array<string>|int|string|null>
+     */
     public function toArray(): array
     {
         return [

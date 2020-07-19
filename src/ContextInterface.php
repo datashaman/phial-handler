@@ -25,19 +25,19 @@ interface ContextInterface
     public function getLogStreamName(): string;
 
     /**
-     * @return array<string>
+     * @return ?array<string>
      */
-    public function getIdentity(): array;
+    public function getIdentity(): ?array;
 
     /**
-     * @return array<string>
+     * @return ?array<string>
      */
-    public function getClientContext(): array;
+    public function getClientContext(): ?array;
 
     public function getLogger(): LoggerInterface;
 
     /**
-     * @return array<string, array|int|string>
+     * @return array<string, array<string>|int|string|null>
      */
     public function toArray(): array;
 }
