@@ -33,6 +33,11 @@ class Context implements
 
     public function jsonSerialize()
     {
+        return $this->toArray();
+    }
+
+    public function toArray(): array
+    {
         return [
             'functionName' => $this->getFunctionName(),
             'functionVersion' => $this->getFunctionVersion(),

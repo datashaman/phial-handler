@@ -35,4 +35,6 @@ interface ContextInterface
     public function getClientContext(): array;
 
     public function getLogger(): LoggerInterface;
+
+    public function toArray(); array;
 }
