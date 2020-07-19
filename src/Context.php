@@ -39,6 +39,7 @@ class Context implements
     public function toArray(): array
     {
         return [
+            'remainingTimeInMillis' => $this->getRemainingTimeInMillis(),
             'functionName' => $this->getFunctionName(),
             'functionVersion' => $this->getFunctionVersion(),
             'invokedFunctionArn' => $this->getInvokedFunctionArn(),
@@ -46,8 +47,8 @@ class Context implements
             'awsRequestId' => $this->getAwsRequestId(),
             'logGroupName' => $this->getLogGroupName(),
             'logStreamName' => $this->getLogStreamName(),
-            'identity' => [],
-            'clientContext' => [],
+            'identity' => $this->getIdentity(),
+            'clientContext' => $this->getClientContext(),
         ];
     }
 
