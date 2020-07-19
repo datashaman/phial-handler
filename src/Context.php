@@ -31,11 +31,24 @@ class Context implements
         $this->logger = $logger;
     }
 
+    public function jsonSerialize()
+    {
+        return [
+            'functionName' => $this->getFunctionName(),
+            'functionVersion' => $this->getFunctionVersion(),
+            'invokedFunctionArn' => $this->getInvokedFunctionArn(),
+            'memoryLimitInMB' => $this->getMemoryLimitInMB(),
+            'awsRequestId' => $this->getAwsRequestId(),
+            'logGroupName' => $this->getLogGroupName(),
+            'logStreamName' => $this->getLogStreamName(),
+            'identity' => [],
+            'clientContext' => [],
+        ];
+    }
+
     public function getRemainingTimeInMillis(): int
     {
-        $deadline = (int) $this
-            ->response
-            ->getHeader('lambda-runtime-deadline-ms')[0];
+        $deadline = (int) $this->getHeader('lambda-runtime-deadline-ms');
         $time = $this->getTimeinMillis();
 
         return $deadline - $time;
@@ -53,7 +66,7 @@ class Context implements
 
     public function getInvokedFunctionArn(): string
     {
-        return $this->response->getHeader('lambda-runtime-invoked-function-Arn')[0];
+        return $this->getHeader('lambda-runtime-invoked-function-arn');
     }
 
     public function getMemoryLimitInMB(): int
@@ -63,7 +76,7 @@ class Context implements
 
     public function getAwsRequestId(): string
     {
-        return $this->response->getHeader('lambda-runtime-aws-request-id')[0];
+        return $this->getHeader('lambda-runtime-aws-request-id');
     }
 
     public function getLogGroupName(): string
@@ -78,14 +91,14 @@ class Context implements
 
     public function getIdentity(): array
     {
-        $header = $this->response->getHeader('lambda-runtime-cognito-identity')[0];
+        $header = $this->getHeader('lambda-runtime-cognito-identity');
 
         return json_decode($header, true, 512, JSON_THROW_ON_ERROR);
     }
 
     public function getClientContext(): array
     {
-        $header = $this->response->getHeader('lambda-runtime-client-context')[0];
+        $header = $this->getHeader('lambda-runtime-client-context');
 
         return json_decode($header, true, 512, JSON_THROW_ON_ERROR);
     }
@@ -95,19 +108,15 @@ class Context implements
         return $this->logger;
     }
 
-    public function jsonSerialize()
+    private function getHeader(string $name): string
     {
-        return [
-            'functionName' => $this->getFunctionName(),
-            'functionVersion' => $this->getFunctionVersion(),
-            'invokedFunctionArn' => $this->getInvokedFunctionArn(),
-            'memoryLimitInMB' => $this->getMemoryLimitInMB(),
-            'awsRequestId' => $this->getAwsRequestId(),
-            'logGroupName' => $this->getLogGroupName(),
-            'logStreamName' => $this->getLogStreamName(),
-            'identity' => [],
-            'clientContext' => [],
-        ];
+        $header = $this->response->getHeader($name);
+
+        if ($header) {
+            return $header[0];
+        }
+
+        return '';
     }
 
     private function getTimeinMillis(): int

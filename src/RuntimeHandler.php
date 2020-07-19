@@ -110,8 +110,9 @@ class RuntimeHandler implements RuntimeHandlerInterface
 
     private function propagateTraceId(ResponseInterface $response): void
     {
-        $traceId = $response->getHeader('lambda-runtime-trace-id ')[0];
-        putenv("_X_AMZN_TRACE_ID=$traceId");
+        if ($header = $response->getHeader('lambda-runtime-trace-id ')) {
+            putenv("_X_AMZN_TRACE_ID={$header[0]}");
+        }
     }
 
     private function createContext(ResponseInterface $response): ContextInterface
