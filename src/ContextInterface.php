@@ -36,5 +36,8 @@ interface ContextInterface
 
     public function getLogger(): LoggerInterface;
 
-    public function toArray(); array;
+    /**
+     * @return array<string, array|int|string>
+     */
+    public function toArray(): array;
 }
