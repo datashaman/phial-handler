@@ -1,14 +1,5 @@
 {
     "name": "datashaman/phial-handler",
-    "autoload": {
-        "psr-4": {
-            "Datashaman\\Phial\\": "src/"
-        }
-    },
-    "config": {
-        "sort-packages": true,
-        "preferred-install": "dist"
-    },
     "require": {
         "php-di/invoker": "^2.0",
         "psr/http-client": "^1.0",
@@ -16,8 +7,18 @@
         "psr/http-message": "^1.0",
         "psr/log": "^1.1"
     },
-    "minimum-stability": "dev",
-    "prefer-stable": true,
     "require-dev": {
-    }
+        "ergebnis/composer-normalize": "^2.6"
+    },
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
+    "autoload": {
+        "psr-4": {
+            "Datashaman\\Phial\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }

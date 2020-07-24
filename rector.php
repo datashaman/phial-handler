@@ -9,5 +9,5 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $parameters->set('paths', [__DIR__ . '/src']);
 
-    $parameters->set('sets', ['php74', 'phpstan']);
+    $parameters->set('sets', ['php73', 'php74', 'phpstan']);
 };
