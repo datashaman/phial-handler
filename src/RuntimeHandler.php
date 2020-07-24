@@ -18,35 +18,17 @@ class RuntimeHandler implements RuntimeHandlerInterface
 {
     use EnvironmentTrait;
 
-    /**
-     * @var ClientInterface
-     */
-    private $client;
+    private ClientInterface $client;
 
-    /**
-     * @var RequestFactoryInterface
-     */
-    private $requestFactory;
+    private RequestFactoryInterface $requestFactory;
 
-    /**
-     * @var StreamFactoryInterface
-     */
-    private $streamFactory;
+    private StreamFactoryInterface $streamFactory;
 
-    /**
-     * @var InvokerInterface
-     */
-    private $invoker;
+    private InvokerInterface $invoker;
 
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
+    private LoggerInterface $logger;
 
-    /**
-     * @var ContextFactoryInterface
-     */
-    private $contextFactory;
+    private ContextFactoryInterface $contextFactory;
 
     public function __construct(
         ClientInterface $client,

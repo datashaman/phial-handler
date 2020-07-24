@@ -15,15 +15,9 @@ class Context implements
 {
     use EnvironmentTrait;
 
-    /**
-     * @var ResponseInterface $response
-     */
-    private $response;
+    private ResponseInterface $response;
 
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
+    private LoggerInterface $logger;
 
     public function __construct(ResponseInterface $response, LoggerInterface $logger)
     {
@@ -141,6 +135,6 @@ class Context implements
         $microtime = microtime();
         $parts = explode(' ', $microtime);
 
-        return (int) sprintf('%d%03d', $parts[1], (int) $parts[0] * 1000);
+        return (int) sprintf('%d%03d', $parts[1], (int) $parts[0] * 1_000);
     }
 }

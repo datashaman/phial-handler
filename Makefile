@@ -1,11 +1,7 @@
-default:
+clean-code: phpstan rector
 
 phpstan:
-	phpstan analyse --level 8 src/
+	phpstan analyse --level max src/
 
 rector:
-	docker run --rm \
-		-v $(shell pwd):/project \
-		rector/rector:latest process /project/src \
-		--config /project/rector.yaml \
-		--autoload-file /project/vendor/autoload.php
+	rector process src/
