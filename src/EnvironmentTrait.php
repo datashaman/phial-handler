@@ -10,7 +10,9 @@ trait EnvironmentTrait
 {
     private function getEnv(string $varname): string
     {
-        if ($value = getenv($varname)) {
+        $value = getenv($varname);
+
+        if ($value !== false) {
             return $value;
         }
 
