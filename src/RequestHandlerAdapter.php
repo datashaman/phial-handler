@@ -36,7 +36,7 @@ class RequestHandlerAdapter
     public function __invoke(array $event, ContextInterface $context): string
     {
         $request = $this->createServerRequest($event, $context);
-        $this->eventDispatcher->dispatch(new RequestEvent($request, $context));
+        $this->eventDispatcher->dispatch(new Events\RequestEvent($request, $context));
         $response = $this->requestHandler->handle($request);
 
         return $this->adaptResponse($response);

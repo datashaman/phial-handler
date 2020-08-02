@@ -55,7 +55,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
     {
         $this->logger->debug('Invoke handler event loop');
 
-        $this->eventDispatcher->dispatch(new StartEvent());
+        $this->eventDispatcher->dispatch(new Events\StartEvent());
 
         while (true) {
             try {
