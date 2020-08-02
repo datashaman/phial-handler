@@ -6,6 +6,7 @@ namespace Datashaman\Phial;
 
 use Exception;
 use Invoker\InvokerInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
@@ -30,13 +31,16 @@ class RuntimeHandler implements RuntimeHandlerInterface
 
     private ContextFactoryInterface $contextFactory;
 
+    private EventDispatcherInterface $eventDispatcher;
+
     public function __construct(
         ClientInterface $client,
         RequestFactoryInterface $requestFactory,
         StreamFactoryInterface $streamFactory,
         InvokerInterface $invoker,
         LoggerInterface $logger,
-        ContextFactoryInterface $contextFactory
+        ContextFactoryInterface $contextFactory,
+        EventDispatcherInterface $eventDispatcher
     ) {
         $this->client = $client;
         $this->requestFactory = $requestFactory;
@@ -44,11 +48,14 @@ class RuntimeHandler implements RuntimeHandlerInterface
         $this->invoker = $invoker;
         $this->logger = $logger;
         $this->contextFactory = $contextFactory;
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     public function __invoke(): void
     {
         $this->logger->debug('Invoke handler event loop');
+
+        $this->eventDispatcher->dispatch(new StartEvent());
 
         while (true) {
             try {
