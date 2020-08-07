@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace Datashaman\Phial;
 
 use Exception;
+
 use Invoker\InvokerInterface;
+
 use Psr\EventDispatcher\EventDispatcherInterface;
+
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
