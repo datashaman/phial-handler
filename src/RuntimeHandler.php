@@ -102,9 +102,10 @@ class RuntimeHandler implements RuntimeHandlerInterface
         return json_decode($body, true, 512, JSON_THROW_ON_ERROR);
     }
 
-    private function propagateTraceId(ResponseInterface $response): void
+    private function propagateTraceId(ResponseInterface $invocation): void
     {
-        if ($header = $response->getHeaderLine('lambda-runtime-trace-id')) {
+        if ($header = $invocation->getHeaderLine('lambda-runtime-trace-id')) {
+            $this->logger->debug('Found trace header', ['header' => $header]);
             putenv("_X_AMZN_TRACE_ID={$header}");
         }
     }
