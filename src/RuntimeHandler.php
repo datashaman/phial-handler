@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Datashaman\Phial;
 
+use Buzz\Browser;
+use Buzz\Client\AbstractClient;
+use Buzz\Client\FileGetContents;
 use Exception;
 use Invoker\InvokerInterface;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Client\ClientInterface;
-use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
@@ -19,30 +22,31 @@ class RuntimeHandler implements RuntimeHandlerInterface
 {
     use EnvironmentTrait;
 
-    private ClientInterface $client;
     private ContextFactoryInterface $contextFactory;
     private EventDispatcherInterface $eventDispatcher;
     private InvokerInterface $invoker;
     private LoggerInterface $logger;
-    private RequestFactoryInterface $requestFactory;
     private StreamFactoryInterface $streamFactory;
 
+    private Browser $browser;
+
     public function __construct(
-        ClientInterface $client,
         ContextFactoryInterface $contextFactory,
         EventDispatcherInterface $eventDispatcher,
         InvokerInterface $invoker,
         LoggerInterface $logger,
-        RequestFactoryInterface $requestFactory,
         StreamFactoryInterface $streamFactory
     ) {
-        $this->client = $client;
         $this->contextFactory = $contextFactory;
         $this->eventDispatcher = $eventDispatcher;
         $this->invoker = $invoker;
         $this->logger = $logger;
-        $this->requestFactory = $requestFactory;
         $this->streamFactory = $streamFactory;
+
+        $factory = new Psr17Factory();
+        $client = new FileGetContents($factory);
+
+        $this->browser = new Browser($client, $factory);
     }
 
     public function __invoke(): void
@@ -51,10 +55,17 @@ class RuntimeHandler implements RuntimeHandlerInterface
 
         while (true) {
             try {
-                $invocation = $this->sendRequest('GET', 'runtime/invocation/next');
+                $invocation = $this
+                    ->browser
+                    ->request(
+                        'GET',
+                        $this->url('runtime/invocation/next')
+                    );
+
                 $this->propagateTraceId($invocation);
 
                 $event = $this->getEvent($invocation);
+
                 $context = $this
                     ->contextFactory
                     ->createContext(
@@ -62,18 +73,20 @@ class RuntimeHandler implements RuntimeHandlerInterface
                         $this->logger
                     );
 
-                $this->sendRequest(
-                    'POST',
-                    "runtime/invocation/{$context->getAwsRequestId()}/response",
-                    [],
-                    $this->invoker->call(
-                        $this->getEnv('_HANDLER'),
-                        [
-                            'event' => $event,
-                            'context' => $context,
-                        ]
-                    )
-                );
+                $this
+                    ->browser
+                    ->request(
+                        'POST',
+                        $this->url("runtime/invocation/{$context->getAwsRequestId()}/response"),
+                        [],
+                        $this->invoker->call(
+                            $this->getEnv('_HANDLER'),
+                            [
+                                'event' => $event,
+                                'context' => $context,
+                            ]
+                        )
+                    );
             } catch (Exception $exception) {
                 $this->postError($context ?? null, $exception);
             }
@@ -97,29 +110,6 @@ class RuntimeHandler implements RuntimeHandlerInterface
         }
     }
 
-    /**
-     * @param array<string> $headers
-     */
-    private function sendRequest(
-        string $method,
-        string $path,
-        array $headers = [],
-        ?string $body = null
-    ): ResponseInterface {
-        $request = $this->requestFactory->createRequest($method, $this->url($path));
-
-        foreach ($headers as $name => $value) {
-            $request = $request->withHeader($name, $value);
-        }
-
-        if (is_string($body)) {
-            $stream = $this->streamFactory->createStream($body);
-            $request = $request->withBody($stream);
-        }
-
-        return $this->client->sendRequest($request);
-    }
-
     private function postError(?ContextInterface $context, Exception $exception): void
     {
         $awsRequestId = $context
@@ -130,14 +120,16 @@ class RuntimeHandler implements RuntimeHandlerInterface
             ? "runtime/invocation/{$awsRequestId}/error"
             : 'runtime/init/error';
 
-        $this->sendRequest(
-            'POST',
-            $path,
-            [
-                'Lambda-Runtime-Function-Error-Type' => 'Unhandled',
-            ],
-            $this->transformException($exception)
-        );
+        $this
+            ->browser
+            ->request(
+                'POST',
+                $this->url($path),
+                [
+                    'Lambda-Runtime-Function-Error-Type' => 'Unhandled',
+                ],
+                $this->transformException($exception)
+            );
 
         if (!$awsRequestId) {
             exit(1);
