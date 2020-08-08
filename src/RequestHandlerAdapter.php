@@ -36,9 +36,22 @@ class RequestHandlerAdapter
     public function __invoke(array $event, ContextInterface $context): string
     {
         $request = $this->createServerRequest($event, $context);
-        $this->eventDispatcher->dispatch(new Events\RequestEvent($request, $context));
-        $requestHandler = $this->requestHandlerFactory->createRequestHandler();
-        $response = $requestHandler->handle($request);
+
+        $this
+            ->eventDispatcher
+            ->dispatch(
+                new Events\RequestEvent(
+                    $request,
+                    $context
+                )
+            );
+
+        $response = $this
+            ->requestHandlerFactory
+            ->createRequestHandler()
+            ->handle($request);
+
+        unset($request);
 
         return $this->adaptResponse($response);
     }
@@ -144,8 +157,7 @@ class RequestHandlerAdapter
 
         return json_encode(
             $payload,
-            JSON_PRETTY_PRINT
-            | JSON_THROW_ON_ERROR
+            JSON_THROW_ON_ERROR
             | JSON_UNESCAPED_SLASHES
             | JSON_UNESCAPED_UNICODE
         );

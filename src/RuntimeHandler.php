@@ -210,8 +210,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
                 'errorType' => get_class($exception),
                 'trace' => $exception->getTrace(),
             ],
-            JSON_PRETTY_PRINT
-            | JSON_THROW_ON_ERROR
+            JSON_THROW_ON_ERROR
             | JSON_UNESCAPED_SLASHES
             | JSON_UNESCAPED_UNICODE
         );
