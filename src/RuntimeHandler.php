@@ -5,18 +5,15 @@ declare(strict_types=1);
 namespace Datashaman\Phial;
 
 use Buzz\Browser;
-use Buzz\Client\AbstractClient;
 use Buzz\Client\FileGetContents;
 use Exception;
 use Invoker\InvokerInterface;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
+use Throwable;
 
 class RuntimeHandler implements RuntimeHandlerInterface
 {
@@ -26,7 +23,6 @@ class RuntimeHandler implements RuntimeHandlerInterface
     private EventDispatcherInterface $eventDispatcher;
     private InvokerInterface $invoker;
     private LoggerInterface $logger;
-    private StreamFactoryInterface $streamFactory;
 
     private Browser $browser;
 
@@ -34,19 +30,14 @@ class RuntimeHandler implements RuntimeHandlerInterface
         ContextFactoryInterface $contextFactory,
         EventDispatcherInterface $eventDispatcher,
         InvokerInterface $invoker,
-        LoggerInterface $logger,
-        StreamFactoryInterface $streamFactory
+        LoggerInterface $logger
     ) {
         $this->contextFactory = $contextFactory;
         $this->eventDispatcher = $eventDispatcher;
         $this->invoker = $invoker;
         $this->logger = $logger;
-        $this->streamFactory = $streamFactory;
 
-        $factory = new Psr17Factory();
-        $client = new FileGetContents($factory);
-
-        $this->browser = new Browser($client, $factory);
+        $this->browser = $this->createBrowser();
     }
 
     public function __invoke(): void
@@ -87,10 +78,18 @@ class RuntimeHandler implements RuntimeHandlerInterface
                             ]
                         )
                     );
-            } catch (Exception $exception) {
+            } catch (Throwable $exception) {
                 $this->postError($context ?? null, $exception);
             }
         }
+    }
+
+    private function createBrowser(): Browser
+    {
+        $factory = new Psr17Factory();
+        $client = new FileGetContents($factory);
+
+        return new Browser($client, $factory);
     }
 
     /**
@@ -110,7 +109,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
         }
     }
 
-    private function postError(?ContextInterface $context, Exception $exception): void
+    private function postError(?ContextInterface $context, Throwable $exception): void
     {
         $awsRequestId = $context
             ? $context->getAwsRequestId()
@@ -128,7 +127,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
                 [
                     'Lambda-Runtime-Function-Error-Type' => 'Unhandled',
                 ],
-                $this->transformException($exception)
+                $this->transformThrowable($exception)
             );
 
         if (!$awsRequestId) {
@@ -139,7 +138,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
     /**
      * @return string
      */
-    private function transformException(Exception $exception): string
+    private function transformThrowable(Throwable $exception): string
     {
         return json_encode(
             [
