@@ -13,18 +13,15 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 class RequestHandlerAdapter
 {
-    private RequestHandlerInterface $requestHandler;
     private EventDispatcherInterface $eventDispatcher;
     private ServerRequestFactoryInterface $serverRequestFactory;
     private StreamFactoryInterface $streamFactory;
 
     public function __construct(
-        RequestHandlerInterface $requestHandler,
         EventDispatcherInterface $eventDispatcher,
         ServerRequestFactoryInterface $serverRequestFactory,
         StreamFactoryInterface $streamFactory
     ) {
-        $this->requestHandler = $requestHandler;
         $this->eventDispatcher = $eventDispatcher;
         $this->serverRequestFactory = $serverRequestFactory;
         $this->streamFactory = $streamFactory;
@@ -33,11 +30,11 @@ class RequestHandlerAdapter
     /**
      * @param array<string,mixed> $event
      */
-    public function __invoke(array $event, ContextInterface $context): string
+    public function __invoke(array $event, ContextInterface $context, RequestHandlerInterface $requestHandler): string
     {
         $request = $this->createServerRequest($event, $context);
         $this->eventDispatcher->dispatch(new Events\RequestEvent($request, $context));
-        $response = $this->requestHandler->handle($request);
+        $response = $requestHandler->handle($request);
 
         return $this->adaptResponse($response);
     }
