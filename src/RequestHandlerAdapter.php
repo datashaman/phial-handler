@@ -4,25 +4,28 @@ declare(strict_types=1);
 
 namespace Datashaman\Phial;
 
+use Datashaman\Phial\RequestHandlerFactoryInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Server\RequestHandlerInterface;
 
 class RequestHandlerAdapter
 {
     private EventDispatcherInterface $eventDispatcher;
+    private RequestHandlerFactoryInterface $requestHandlerFactory;
     private ServerRequestFactoryInterface $serverRequestFactory;
     private StreamFactoryInterface $streamFactory;
 
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
+        RequestHandlerFactoryInterface $requestHandlerFactory,
         ServerRequestFactoryInterface $serverRequestFactory,
         StreamFactoryInterface $streamFactory
     ) {
         $this->eventDispatcher = $eventDispatcher;
+        $this->requestHandlerFactory = $requestHandlerFactory;
         $this->serverRequestFactory = $serverRequestFactory;
         $this->streamFactory = $streamFactory;
     }
@@ -30,10 +33,11 @@ class RequestHandlerAdapter
     /**
      * @param array<string,mixed> $event
      */
-    public function __invoke(array $event, ContextInterface $context, RequestHandlerInterface $requestHandler): string
+    public function __invoke(array $event, ContextInterface $context): string
     {
         $request = $this->createServerRequest($event, $context);
         $this->eventDispatcher->dispatch(new Events\RequestEvent($request, $context));
+        $requestHandler = $this->requestHandlerFactory->createRequestHandler();
         $response = $requestHandler->handle($request);
 
         return $this->adaptResponse($response);
