@@ -20,128 +20,81 @@ class RuntimeHandler implements RuntimeHandlerInterface
     use EnvironmentTrait;
 
     private ClientInterface $client;
-
-    private RequestFactoryInterface $requestFactory;
-
-    private StreamFactoryInterface $streamFactory;
-
-    private InvokerInterface $invoker;
-
-    private LoggerInterface $logger;
-
     private ContextFactoryInterface $contextFactory;
-
     private EventDispatcherInterface $eventDispatcher;
+    private InvokerInterface $invoker;
+    private LoggerInterface $logger;
+    private RequestFactoryInterface $requestFactory;
+    private StreamFactoryInterface $streamFactory;
 
     public function __construct(
         ClientInterface $client,
-        RequestFactoryInterface $requestFactory,
-        StreamFactoryInterface $streamFactory,
+        ContextFactoryInterface $contextFactory,
+        EventDispatcherInterface $eventDispatcher,
         InvokerInterface $invoker,
         LoggerInterface $logger,
-        ContextFactoryInterface $contextFactory,
-        EventDispatcherInterface $eventDispatcher
+        RequestFactoryInterface $requestFactory,
+        StreamFactoryInterface $streamFactory
     ) {
         $this->client = $client;
-        $this->requestFactory = $requestFactory;
-        $this->streamFactory = $streamFactory;
-        $this->invoker = $invoker;
-        $this->logger = $logger;
         $this->contextFactory = $contextFactory;
         $this->eventDispatcher = $eventDispatcher;
+        $this->invoker = $invoker;
+        $this->logger = $logger;
+        $this->requestFactory = $requestFactory;
+        $this->streamFactory = $streamFactory;
     }
 
     public function __invoke(): void
     {
-        $this->logger->debug('Invoke handler event loop');
-
         $this->eventDispatcher->dispatch(new Events\StartEvent());
 
         while (true) {
             try {
-                $response = $this->getNextInvocation();
-                $event = $this->getEvent($response);
-                $this->propagateTraceId($response);
-                $context = $this->createContext($response);
-                $response = $this->invokeHandler($event, $context);
-                $this->postResponse($response, $context);
-            } catch (Exception $exception) {
-                $this->logger->error(
-                    'Error handling event',
-                    [
-                        'exception' => $exception,
-                        'event' => $event ?? [],
-                        'response' => $response ?? [],
-                    ]
-                );
+                $invocation = $this->sendRequest('GET', 'runtime/invocation/next');
+                $this->propagateTraceId($invocation);
 
+                $event = $this->getEvent($invocation);
+                $context = $this
+                    ->contextFactory
+                    ->createContext(
+                        $invocation,
+                        $this->logger
+                    );
+
+                $this->sendRequest(
+                    'POST',
+                    "runtime/invocation/{$context->getAwsRequestId()}/response",
+                    [],
+                    $this->invoker->call(
+                        $this->getEnv('_HANDLER'),
+                        [
+                            'event' => $event,
+                            'context' => $context,
+                        ]
+                    )
+                );
+            } catch (Exception $exception) {
                 $this->postError($context ?? null, $exception);
             }
         }
     }
 
-    private function getNextInvocation(): ResponseInterface
-    {
-        $this->logger->debug('Get next invocation');
-
-        return $this->sendRequest('GET', 'runtime/invocation/next');
-    }
-
     /**
      * @return array<string>
      */
-    private function getEvent(ResponseInterface $response): array
+    private function getEvent(ResponseInterface $invocation): array
     {
-        $body = (string) $response->getBody();
+        $body = (string) $invocation->getBody();
 
         return json_decode($body, true, 512, JSON_THROW_ON_ERROR);
     }
 
     private function propagateTraceId(ResponseInterface $response): void
     {
-        if ($header = $response->getHeader('lambda-runtime-trace-id ')) {
-            putenv("_X_AMZN_TRACE_ID={$header[0]}");
+        if ($header = $response->getHeaderLine('lambda-runtime-trace-id')) {
+            putenv("_X_AMZN_TRACE_ID={$header}");
         }
-    }
-
-    private function createContext(ResponseInterface $response): ContextInterface
-    {
-        return $this->contextFactory->createContext($response, $this->logger);
-    }
-
-    /**
-     * @param array<string> $event
-     *
-     * @return mixed
-     */
-    private function invokeHandler(
-        array $event,
-        ContextInterface $context
-    ) {
-        /** @var callable */
-        $handler = $this->getEnv('_HANDLER');
-
-        return $this->invoker->call(
-            $handler,
-            [
-                'event' => $event,
-                'context' => $context,
-            ]
-        );
-    }
-
-    private function postResponse(
-        string $response,
-        ContextInterface $context
-    ): void {
-        $this->logger->debug('Post response');
-
-        $this->sendRequest(
-            'POST',
-            "runtime/invocation/{$context->getAwsRequestId()}/response",
-            [],
-            $response
-        );
     }
 
     /**
@@ -169,8 +122,6 @@ class RuntimeHandler implements RuntimeHandlerInterface
 
     private function postError(?ContextInterface $context, Exception $exception): void
     {
-        $this->logger->debug('Post error');
-
         $awsRequestId = $context
             ? $context->getAwsRequestId()
             : null;
