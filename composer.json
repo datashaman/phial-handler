@@ -1,12 +1,13 @@
 {
     "name": "datashaman/phial-handler",
+    "description": "Handler for phial.",
+    "license": "MIT",
     "require": {
         "kriswallsmith/buzz": "^1.1",
         "nyholm/psr7": "^1.3",
         "php-di/invoker": "^2.1",
         "pkerrigan/xray": "^1.2",
         "psr/event-dispatcher": "^1.0",
-        "psr/http-factory": "^1.0",
         "psr/http-message": "^1.0",
         "psr/http-server-handler": "^1.0",
         "psr/log": "^1.1"

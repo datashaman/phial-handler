@@ -5,31 +5,27 @@ declare(strict_types=1);
 namespace Datashaman\Phial;
 
 use Datashaman\Phial\RequestHandlerFactoryInterface;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Pkerrigan\Xray\Submission\DaemonSegmentSubmitter;
 use Pkerrigan\Xray\Trace;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestFactoryInterface;
-use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 class RequestHandlerAdapter
 {
     private EventDispatcherInterface $eventDispatcher;
     private RequestHandlerFactoryInterface $requestHandlerFactory;
-    private ServerRequestFactoryInterface $serverRequestFactory;
-    private StreamFactoryInterface $streamFactory;
+    private Psr17Factory $factory;
 
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
-        RequestHandlerFactoryInterface $requestHandlerFactory,
-        ServerRequestFactoryInterface $serverRequestFactory,
-        StreamFactoryInterface $streamFactory
+        RequestHandlerFactoryInterface $requestHandlerFactory
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->requestHandlerFactory = $requestHandlerFactory;
-        $this->serverRequestFactory = $serverRequestFactory;
-        $this->streamFactory = $streamFactory;
+
+        $this->factory = new Psr17Factory();
     }
 
     /**
@@ -77,7 +73,7 @@ class RequestHandlerAdapter
         array $event,
         ContextInterface $context
     ): ServerRequestInterface {
-        $request = $this->serverRequestFactory
+        $request = $this->factory
             ->createServerRequest(
                 $event['httpMethod'],
                 $event['path'],
@@ -124,7 +120,7 @@ class RequestHandlerAdapter
             $body = $event['isBase64Encoded']
                 ? base64_decode($event['body'])
                 : $event['body'];
-            $stream = $this->streamFactory->createStream();
+            $stream = $this->factory->createStream();
             $stream->write($body);
             $request = $request->withBody($stream);
         }
