@@ -141,6 +141,12 @@ class RequestHandlerAdapter
             'headers' => $headers,
         ];
 
-        return json_encode($payload, JSON_THROW_ON_ERROR);
+        return json_encode(
+            $payload,
+            JSON_PRETTY_PRINT
+            | JSON_THROW_ON_ERROR
+            | JSON_UNESCAPED_SLASHES
+            | JSON_UNESCAPED_UNICODE
+        );
     }
 }
