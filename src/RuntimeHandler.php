@@ -64,6 +64,11 @@ class RuntimeHandler implements RuntimeHandlerInterface
                         $this->logger
                     );
 
+                /**
+                 * @var callable
+                 **/
+                $handler = $this->getEnv('_HANDLER');
+
                 $this
                     ->browser
                     ->request(
@@ -71,7 +76,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
                         $this->url("runtime/invocation/{$context->getAwsRequestId()}/response"),
                         [],
                         $this->invoker->call(
-                            $this->getEnv('_HANDLER'),
+                            $handler,
                             [
                                 'event' => $event,
                                 'context' => $context,
@@ -162,7 +167,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
     {
         return sprintf(
             'http://%s/2018-06-01/%s',
-            getenv('AWS_LAMBDA_RUNTIME_API'),
+            $this->getEnv('AWS_LAMBDA_RUNTIME_API'),
             $path
         );
     }
@@ -172,7 +177,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
         $path = realpath(
             sprintf(
                 '%s%s%s',
-                getenv('LAMBDA_TASK_ROOT'),
+                $this->getEnv('LAMBDA_TASK_ROOT'),
                 DIRECTORY_SEPARATOR,
                 $path
             )
