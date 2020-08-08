@@ -14,16 +14,17 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class RequestHandlerAdapter
 {
-    private EventDispatcherInterface $eventDispatcher;
     private RequestHandlerFactoryInterface $requestHandlerFactory;
+    private EventDispatcherInterface $eventDispatcher;
+
     private Psr17Factory $factory;
 
     public function __construct(
-        EventDispatcherInterface $eventDispatcher,
-        RequestHandlerFactoryInterface $requestHandlerFactory
+        RequestHandlerFactoryInterface $requestHandlerFactory,
+        EventDispatcherInterface $eventDispatcher
     ) {
-        $this->eventDispatcher = $eventDispatcher;
         $this->requestHandlerFactory = $requestHandlerFactory;
+        $this->eventDispatcher = $eventDispatcher;
 
         $this->factory = new Psr17Factory();
     }
