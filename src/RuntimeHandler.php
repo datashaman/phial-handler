@@ -140,7 +140,6 @@ class RuntimeHandler implements RuntimeHandlerInterface
         );
 
         if (!$awsRequestId) {
-            $this->logger->debug('Error with no AWS Request ID, exiting');
             exit(1);
         }
     }
