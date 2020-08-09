@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Datashaman\Phial;
 
-use Buzz\Browser;
 use Buzz\Client\MultiCurl;
 use Exception;
 use Invoker\InvokerInterface;
 use Nyholm\Psr7\Factory\Psr17Factory;
+use Nyholm\Psr7\Request;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -24,7 +24,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
     private InvokerInterface $invoker;
     private LoggerInterface $logger;
 
-    private Browser $browser;
+    private MultiCurl $client;
 
     public function __construct(
         ContextFactoryInterface $contextFactory,
@@ -42,7 +42,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
         $this->invoker = $invoker;
         $this->logger = $logger;
 
-        $this->browser = $this->createBrowser();
+        $this->client = $this->createClient();
     }
 
     public function __invoke(): void
@@ -52,10 +52,12 @@ class RuntimeHandler implements RuntimeHandlerInterface
         while (true) {
             try {
                 $invocation = $this
-                    ->browser
-                    ->request(
-                        'GET',
-                        $this->url('runtime/invocation/next')
+                    ->client
+                    ->sendRequest(
+                        new Request(
+                            'GET',
+                            $this->url('runtime/invocation/next')
+                        )
                     );
 
                 $this->propagateTraceId($invocation);
@@ -75,17 +77,19 @@ class RuntimeHandler implements RuntimeHandlerInterface
                 $handler = $this->getEnv('_HANDLER');
 
                 $this
-                    ->browser
-                    ->request(
-                        'POST',
-                        $this->url("runtime/invocation/{$context->getAwsRequestId()}/response"),
-                        [],
-                        $this->invoker->call(
-                            $handler,
-                            [
-                                'event' => $event,
-                                'context' => $context,
-                            ]
+                    ->client
+                    ->sendRequest(
+                        new Request(
+                            'POST',
+                            $this->url("runtime/invocation/{$context->getAwsRequestId()}/response"),
+                            [],
+                            $this->invoker->call(
+                                $handler,
+                                [
+                                    'event' => $event,
+                                    'context' => $context,
+                                ]
+                            )
                         )
                     );
             } catch (Throwable $exception) {
@@ -94,12 +98,11 @@ class RuntimeHandler implements RuntimeHandlerInterface
         }
     }
 
-    private function createBrowser(): Browser
+    private function createClient(): MultiCurl
     {
         $factory = new Psr17Factory();
-        $client = new MultiCurl($factory);
 
-        return new Browser($client, $factory);
+        return new MultiCurl($factory);
     }
 
     /**
@@ -130,14 +133,16 @@ class RuntimeHandler implements RuntimeHandlerInterface
             : 'runtime/init/error';
 
         $this
-            ->browser
-            ->request(
-                'POST',
-                $this->url($path),
-                [
-                    'Lambda-Runtime-Function-Error-Type' => 'Unhandled',
-                ],
-                $this->transformThrowable($exception)
+            ->client
+            ->sendRequest(
+                new Request(
+                    'POST',
+                    $this->url($path),
+                    [
+                        'Lambda-Runtime-Function-Error-Type' => 'Unhandled',
+                    ],
+                    $this->transformThrowable($exception)
+                )
             );
 
         if (!$awsRequestId) {
