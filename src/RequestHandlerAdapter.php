@@ -11,11 +11,13 @@ use Pkerrigan\Xray\Trace;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
 
 class RequestHandlerAdapter
 {
     private RequestHandlerFactoryInterface $requestHandlerFactory;
     private EventDispatcherInterface $eventDispatcher;
+    private LoggerInterface $logger;
 
     private Psr17Factory $factory;
 
@@ -37,6 +39,8 @@ class RequestHandlerAdapter
         $request = $this->createServerRequest($event, $context);
 
         $trace = Trace::getInstance();
+
+        $this->logger->debug('Trace header', ['header' => getenv('_X_AMZN_TRACE_ID')]);
 
         $trace
             ->setTraceHeader(getenv('_X_AMZN_TRACE_ID') ?: null)
