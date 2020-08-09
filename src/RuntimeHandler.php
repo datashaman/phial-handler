@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Datashaman\Phial;
 
 use Buzz\Browser;
-use Buzz\Client\Curl;
+use Buzz\Client\MultiCurl;
 use Exception;
 use Invoker\InvokerInterface;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -92,7 +92,7 @@ class RuntimeHandler implements RuntimeHandlerInterface
     private function createBrowser(): Browser
     {
         $factory = new Psr17Factory();
-        $client = new Curl($factory);
+        $client = new MultiCurl($factory);
 
         return new Browser($client, $factory);
     }
