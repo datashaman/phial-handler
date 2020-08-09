@@ -32,6 +32,11 @@ class RuntimeHandler implements RuntimeHandlerInterface
         InvokerInterface $invoker,
         LoggerInterface $logger
     ) {
+        // Need this until curl extension is updated
+        if (!defined('CURL_VERSION_HTTP2')) {
+            define('CURL_VERSION_HTTP2', 0);
+        }
+
         $this->contextFactory = $contextFactory;
         $this->eventDispatcher = $eventDispatcher;
         $this->invoker = $invoker;
