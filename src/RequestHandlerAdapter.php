@@ -40,7 +40,7 @@ class RequestHandlerAdapter
 
         $trace
             ->setTraceHeader(getenv('_X_AMZN_TRACE_ID') ?: null)
-            ->setName('phial')
+            ->setName('phial-handler')
             ->setUrl((string) $request->getUri())
             ->setMethod($request->getMethod())
             ->begin();

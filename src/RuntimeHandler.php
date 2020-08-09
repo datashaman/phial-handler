@@ -146,6 +146,8 @@ class RuntimeHandler implements RuntimeHandlerInterface
      */
     private function transformThrowable(Throwable $exception): string
     {
+        $this->logger->debug('Exception', ['exception' => $exception]);
+
         return json_encode(
             [
                 'errorMessage' => sprintf(
