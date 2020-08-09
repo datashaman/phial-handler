@@ -23,10 +23,12 @@ class RequestHandlerAdapter
 
     public function __construct(
         RequestHandlerFactoryInterface $requestHandlerFactory,
-        EventDispatcherInterface $eventDispatcher
+        EventDispatcherInterface $eventDispatcher,
+        LoggerInterface $logger
     ) {
         $this->requestHandlerFactory = $requestHandlerFactory;
         $this->eventDispatcher = $eventDispatcher;
+        $this->logger = $logger;
 
         $this->factory = new Psr17Factory();
     }
