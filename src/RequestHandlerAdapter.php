@@ -40,11 +40,7 @@ class RequestHandlerAdapter
     {
         $request = $this->createServerRequest($event, $context);
 
-        $trace = Trace::getInstance();
-
-        $this->logger->debug('Trace header', ['header' => getenv('_X_AMZN_TRACE_ID')]);
-
-        $trace
+        Trace::getInstance()
             ->setTraceHeader(getenv('_X_AMZN_TRACE_ID') ?: null)
             ->setName('phial-handler')
             ->setUrl((string) $request->getUri())
@@ -65,7 +61,7 @@ class RequestHandlerAdapter
             ->createRequestHandler()
             ->handle($request);
 
-        $trace
+        Trace::getInstance()
             ->end()
             ->setResponseCode($response->getStatusCode())
             ->submit(new DaemonSegmentSubmitter());
