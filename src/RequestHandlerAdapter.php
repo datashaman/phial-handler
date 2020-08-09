@@ -6,8 +6,6 @@ namespace Datashaman\Phial;
 
 use Datashaman\Phial\RequestHandlerFactoryInterface;
 use Nyholm\Psr7\Factory\Psr17Factory;
-use Pkerrigan\Xray\Submission\DaemonSegmentSubmitter;
-use Pkerrigan\Xray\Trace;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -40,13 +38,6 @@ class RequestHandlerAdapter
     {
         $request = $this->createServerRequest($event, $context);
 
-        Trace::getInstance()
-            ->setTraceHeader(getenv('_X_AMZN_TRACE_ID') ?: null)
-            ->setName('phial-handler')
-            ->setUrl((string) $request->getUri())
-            ->setMethod($request->getMethod())
-            ->begin();
-
         $this
             ->eventDispatcher
             ->dispatch(
@@ -61,10 +52,15 @@ class RequestHandlerAdapter
             ->createRequestHandler()
             ->handle($request);
 
-        Trace::getInstance()
-            ->end()
-            ->setResponseCode($response->getStatusCode())
-            ->submit(new DaemonSegmentSubmitter());
+        $this
+            ->eventDispatcher
+            ->dispatch(
+                new Events\ResponseEvent(
+                    $request,
+                    $response,
+                    $context
+                )
+            );
 
         return $this->adaptResponse($response);
     }
