@@ -14,7 +14,7 @@ jobs:
       - name: phpstan
         uses: docker://oskarstark/phpstan-ga
         with:
-          args: analyse src/ --level=8
+          args: analyse src/ --level=max
 
       - name: publish
         uses: wei/curl@master
