@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Datashaman\Phial;
+namespace Datashaman\Phial\Lambda;
 
+use Datashaman\Phial\Traits\EnvironmentTrait;
 use Exception;
 use JsonSerializable;
 use Psr\Http\Message\ResponseInterface;
@@ -19,8 +20,10 @@ class Context implements
 
     private LoggerInterface $logger;
 
-    public function __construct(ResponseInterface $response, LoggerInterface $logger)
-    {
+    public function __construct(
+        ResponseInterface $response,
+        LoggerInterface $logger
+    ) {
         $this->response = $response;
         $this->logger = $logger;
     }

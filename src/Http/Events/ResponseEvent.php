@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Datashaman\Phial\Events;
+namespace Datashaman\Phial\Http\Events;
 
-use Datashaman\Phial\ContextInterface;
+use Datashaman\Phial\Lambda\ContextInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 

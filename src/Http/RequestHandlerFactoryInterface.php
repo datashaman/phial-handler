@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Datashaman\Phial;
+namespace Datashaman\Phial\Http;
 
 use Psr\Http\Server\RequestHandlerInterface;
 

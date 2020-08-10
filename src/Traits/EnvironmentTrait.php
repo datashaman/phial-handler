@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Datashaman\Phial;
+namespace Datashaman\Phial\Traits;
 
 use Exception;
 

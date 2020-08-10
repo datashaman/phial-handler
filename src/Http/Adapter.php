@@ -2,16 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Datashaman\Phial;
+namespace Datashaman\Phial\Http;
 
-use Datashaman\Phial\RequestHandlerFactoryInterface;
+use Datashaman\Phial\Lambda\ContextInterface;
+use Datashaman\Phial\Lambda\LambdaHandlerInterface;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 
-class RequestHandlerAdapter
+class Adapter
 {
     private RequestHandlerFactoryInterface $requestHandlerFactory;
     private EventDispatcherInterface $eventDispatcher;
@@ -65,10 +66,32 @@ class RequestHandlerAdapter
         return $this->adaptResponse($response);
     }
 
+    private function adaptResponse(ResponseInterface $response): string
+    {
+        $headers = [];
+
+        foreach ($response->getHeaders() as $name => $value) {
+            $headers[$name] = implode(', ', $value);
+        }
+
+        $payload = [
+            'statusCode' => $response->getStatusCode(),
+            'body' => (string) $response->getBody(),
+            'headers' => $headers,
+        ];
+
+        return json_encode(
+            $payload,
+            JSON_THROW_ON_ERROR
+            | JSON_UNESCAPED_SLASHES
+            | JSON_UNESCAPED_UNICODE
+        );
+    }
+
     /**
      * @param array<string,mixed> $event
      */
-    private function createServerRequest(
+    public function createServerRequest(
         array $event,
         ContextInterface $context
     ): ServerRequestInterface {
@@ -148,27 +171,5 @@ class RequestHandlerAdapter
         }
 
         return substr($haystack, -$length) === $needle;
-    }
-
-    private function adaptResponse(ResponseInterface $response): string
-    {
-        $headers = [];
-
-        foreach ($response->getHeaders() as $name => $value) {
-            $headers[$name] = implode(', ', $value);
-        }
-
-        $payload = [
-            'statusCode' => $response->getStatusCode(),
-            'body' => (string) $response->getBody(),
-            'headers' => $headers,
-        ];
-
-        return json_encode(
-            $payload,
-            JSON_THROW_ON_ERROR
-            | JSON_UNESCAPED_SLASHES
-            | JSON_UNESCAPED_UNICODE
-        );
     }
 }

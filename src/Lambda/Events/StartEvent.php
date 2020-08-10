@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Datashaman\Phial\Events;
+namespace Datashaman\Phial\Lambda\Events;
 
 class StartEvent
 {

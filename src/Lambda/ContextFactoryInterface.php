@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Datashaman\Phial;
+namespace Datashaman\Phial\Lambda;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 
-class ContextFactory implements ContextFactoryInterface
+interface ContextFactoryInterface
 {
     /**
      * @param ResponseInterface $response
@@ -18,7 +18,5 @@ class ContextFactory implements ContextFactoryInterface
     public function createContext(
         ResponseInterface $response,
         LoggerInterface $logger
-    ): ContextInterface {
-        return new Context($response, $logger);
-    }
+    ): ContextInterface;
 }

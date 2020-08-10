@@ -1,7 +1,7 @@
-clean-code: phpstan rector
+code-quality: code-phpstan code-rector
 
-phpstan:
+code-phpstan:
 	phpstan analyse --level max src/
 
-rector:
+code-rector:
 	rector process src/

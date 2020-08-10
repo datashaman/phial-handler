@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Datashaman\Phial;
+namespace Datashaman\Phial\Lambda;
 
 use Buzz\Browser;
 use Buzz\Client\MultiCurl;
+use Datashaman\Phial\Traits\EnvironmentTrait;
 use Exception;
 use Invoker\InvokerInterface;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -15,7 +16,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
-class RuntimeHandler implements RuntimeHandlerInterface
+class EventHandler
 {
     use EnvironmentTrait;
 
