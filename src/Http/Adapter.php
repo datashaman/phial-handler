@@ -34,6 +34,8 @@ class Adapter
 
     /**
      * @param array<string,mixed> $event
+     *
+     * @return array<string,int|string|array>
      */
     public function __invoke(array $event, ContextInterface $context): array
     {
@@ -66,6 +68,9 @@ class Adapter
         return $this->adaptResponse($response);
     }
 
+    /**
+     * @return array<string,int|string|array>
+     */
     private function adaptResponse(ResponseInterface $response): array
     {
         $headers = [];
