@@ -75,19 +75,26 @@ class EventHandler
                  **/
                 $handler = $this->getEnv('_HANDLER');
 
+                $body = json_encode(
+                    $this->invoker->call(
+                        $handler,
+                        [
+                            'event' => $event,
+                            'context' => $context,
+                        ]
+                    ),
+                    JSON_THROW_ON_ERROR
+                    | JSON_UNESCAPED_SLASHES
+                    | JSON_UNESCAPED_UNICODE
+                );
+
                 $this
                     ->browser
                     ->request(
                         'POST',
                         $this->url("runtime/invocation/{$context->getAwsRequestId()}/response"),
                         [],
-                        $this->invoker->call(
-                            $handler,
-                            [
-                                'event' => $event,
-                                'context' => $context,
-                            ]
-                        )
+                        $body
                     );
             } catch (Throwable $exception) {
                 $this->postError($context ?? null, $exception);

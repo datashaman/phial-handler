@@ -35,7 +35,7 @@ class Adapter
     /**
      * @param array<string,mixed> $event
      */
-    public function __invoke(array $event, ContextInterface $context): string
+    public function __invoke(array $event, ContextInterface $context): array
     {
         $request = $this->createServerRequest($event, $context);
 
@@ -66,7 +66,7 @@ class Adapter
         return $this->adaptResponse($response);
     }
 
-    private function adaptResponse(ResponseInterface $response): string
+    private function adaptResponse(ResponseInterface $response): array
     {
         $headers = [];
 
@@ -74,18 +74,11 @@ class Adapter
             $headers[$name] = implode(', ', $value);
         }
 
-        $payload = [
+        return [
             'statusCode' => $response->getStatusCode(),
             'body' => (string) $response->getBody(),
             'headers' => $headers,
         ];
-
-        return json_encode(
-            $payload,
-            JSON_THROW_ON_ERROR
-            | JSON_UNESCAPED_SLASHES
-            | JSON_UNESCAPED_UNICODE
-        );
     }
 
     /**
