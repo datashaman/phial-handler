@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Datashaman\Phial\Http\Listeners;
 
-use Datashaman\Phial\Http\Events\ResponseEvent;
+use Datashaman\Phial\Events\ResponseEvent;
 use Pkerrigan\Xray\Submission\DaemonSegmentSubmitter;
 use Pkerrigan\Xray\Trace;
 
@@ -14,7 +14,6 @@ class TraceEnd
     {
         Trace::getInstance()
             ->end()
-            ->setResponseCode($event->response->getStatusCode())
             ->submit(new DaemonSegmentSubmitter());
     }
 }
