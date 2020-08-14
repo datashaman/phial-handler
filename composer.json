@@ -20,7 +20,10 @@
     "autoload": {
         "psr-4": {
             "Datashaman\\Phial\\": "src/"
-        }
+        },
+        "files": [
+            "src/helpers.php"
+        ]
     },
     "minimum-stability": "dev",
     "prefer-stable": true
