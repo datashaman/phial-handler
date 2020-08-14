@@ -6,6 +6,8 @@ namespace Datashaman\Phial\Lambda;
 
 use Buzz\Browser;
 use Buzz\Client\MultiCurl;
+use Datashaman\Phial\Events\RequestEvent;
+use Datashaman\Phial\Events\ResponseEvent;
 use Datashaman\Phial\Traits\EnvironmentTrait;
 use Exception;
 use Invoker\InvokerInterface;
@@ -70,19 +72,29 @@ class EventHandler
                         $this->logger
                     );
 
+                $this
+                    ->eventDispatcher
+                    ->dispatch(new RequestEvent($event, $context));
+
                 /**
                  * @var callable
                  **/
                 $handler = $this->getEnv('_HANDLER');
 
+                $response = $this->invoker->call(
+                    $handler,
+                    [
+                        'event' => $event,
+                        'context' => $context,
+                    ]
+                );
+
+                $this
+                    ->eventDispatcher
+                    ->dispatch(new ResponseEvent($event, $response, $context));
+
                 $body = json_encode(
-                    $this->invoker->call(
-                        $handler,
-                        [
-                            'event' => $event,
-                            'context' => $context,
-                        ]
-                    ),
+                    $response,
                     JSON_THROW_ON_ERROR
                     | JSON_UNESCAPED_SLASHES
                     | JSON_UNESCAPED_UNICODE
