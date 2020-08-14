@@ -39,6 +39,10 @@ if (!function_exists('base_dir')) {
             $path = substr($path, 1);
         }
 
-        return BASE_DIR . ($path ? "/$path" : '');
+        if (defined('BASE_DIR')) {
+            return BASE_DIR . ($path ? "/$path" : '');
+        }
+
+        throw new Exception('BASE_DIR is not defined');
     }
 }
