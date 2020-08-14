@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Datashaman\Phial\Lambda;
+namespace Datashaman\Phial;
 
 use Buzz\Browser;
 use Buzz\Client\MultiCurl;
@@ -18,7 +18,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
-class EventHandler
+class FunctionHandler
 {
     use EnvironmentTrait;
 

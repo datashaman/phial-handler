@@ -6,8 +6,8 @@ namespace Datashaman\Phial\Providers;
 
 use Circli\EventDispatcher\EventDispatcher;
 use Circli\EventDispatcher\ListenerProvider\ContainerListenerProvider;
-use Datashaman\Phial\Lambda\ContextFactory;
-use Datashaman\Phial\Lambda\ContextFactoryInterface;
+use Datashaman\Phial\ContextFactory;
+use Datashaman\Phial\ContextFactoryInterface;
 use Interop\Container\ServiceProviderInterface;
 use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
