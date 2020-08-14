@@ -18,7 +18,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
-class FunctionHandler
+class RuntimeHandler
 {
     use EnvironmentTrait;
 
