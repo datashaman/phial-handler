@@ -40,10 +40,6 @@ class EventHandler
             define('CURL_VERSION_HTTP2', 0);
         }
 
-        if (!defined('BASE_DIR')) {
-            define('BASE_DIR', getcwd());
-        }
-
         $this->contextFactory = $contextFactory;
         $this->eventDispatcher = $eventDispatcher;
         $this->invoker = $invoker;
