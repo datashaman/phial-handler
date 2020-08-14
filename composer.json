@@ -3,6 +3,8 @@
     "description": "Handler for phial.",
     "license": "MIT",
     "require": {
+        "circli/event-dispatcher": "^2.2",
+        "container-interop/service-provider": "^0.4.0",
         "kriswallsmith/buzz": "^1.1",
         "nyholm/psr7": "^1.3",
         "php-di/invoker": "^2.1",

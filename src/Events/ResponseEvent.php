@@ -8,10 +8,22 @@ use Datashaman\Phial\Lambda\ContextInterface;
 
 class ResponseEvent
 {
+    /**
+     * @var array<string,mixed>
+     */
     public array $event;
+
+    /**
+     * @var mixed
+     */
     public $response;
+
     public ContextInterface $context;
 
+    /**
+     * @param array<string,mixed> $event
+     * @param mixed $response
+     */
     public function __construct(
         array $event,
         $response,

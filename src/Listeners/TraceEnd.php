@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Datashaman\Phial\Http\Listeners;
+namespace Datashaman\Phial\Listeners;
 
 use Datashaman\Phial\Events\ResponseEvent;
 use Pkerrigan\Xray\Submission\DaemonSegmentSubmitter;

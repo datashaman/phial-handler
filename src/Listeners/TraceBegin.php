@@ -11,8 +11,6 @@ class TraceBegin
 {
     public function __invoke(RequestEvent $event): void
     {
-        $request = $event->request;
-
         Trace::getInstance()
             ->setTraceHeader(getenv('_X_AMZN_TRACE_ID') ?: null)
             ->setName('phial-handler')

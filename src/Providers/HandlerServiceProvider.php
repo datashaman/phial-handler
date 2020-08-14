@@ -10,6 +10,8 @@ use Datashaman\Phial\Lambda\ContextFactory;
 use Datashaman\Phial\Lambda\ContextFactoryInterface;
 use Interop\Container\ServiceProviderInterface;
 use Psr\Container\ContainerInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\EventDispatcher\ListenerProviderInterface;
 
 class HandlerServiceProvider implements ServiceProviderInterface
 {
