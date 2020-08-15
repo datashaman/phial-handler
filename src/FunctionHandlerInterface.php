@@ -9,7 +9,7 @@ interface FunctionHandlerInterface
     /**
      * @param array<string,mixed> $event
      *
-     * @return mixed
+     * @return ?mixed
      */
     public function handle(
         array $event,
