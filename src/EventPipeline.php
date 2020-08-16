@@ -6,31 +6,31 @@ namespace Datashaman\Phial;
 
 use OutOfBoundsException;
 
-class FunctionPipeline implements
-    FunctionHandlerInterface,
-    FunctionMiddlewareInterface
+class EventPipeline implements
+    EventHandlerInterface,
+    EventMiddlewareInterface
 {
     /**
-     * @var array<int,FunctionMiddlewareInterface>
+     * @var array<int,EventMiddlewareInterface>
      */
     private array $middleware = [];
 
     /**
-     * @param array<int,FunctionMiddlewareInterface> $middleware
+     * @param array<int,EventMiddlewareInterface> $middleware
      */
     public function __construct(array $middleware = [])
     {
         $this->middleware = $middleware;
     }
 
-    public function append(FunctionMiddlewareInterface ...$middleware): self
+    public function append(EventMiddlewareInterface ...$middleware): self
     {
         array_push($this->middleware, ...$middleware);
 
         return $this;
     }
 
-    public function prepend(FunctionMiddlewareInterface ...$middleware): self
+    public function prepend(EventMiddlewareInterface ...$middleware): self
     {
         array_unshift($this->middleware, ...$middleware);
 
@@ -54,7 +54,7 @@ class FunctionPipeline implements
      *
      * @return mixed
      */
-    public function process(array $event, ContextInterface $context, FunctionHandlerInterface $handler)
+    public function process(array $event, ContextInterface $context, EventHandlerInterface $handler)
     {
         try {
             return $this->handle($event, $context);
@@ -66,7 +66,7 @@ class FunctionPipeline implements
     /**
      * @throws OutOfBoundsException If no middleware is available
      */
-    private function nextMiddleware(): FunctionMiddlewareInterface
+    private function nextMiddleware(): EventMiddlewareInterface
     {
         $middleware = array_shift($this->middleware);
 

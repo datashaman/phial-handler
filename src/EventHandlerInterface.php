@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Datashaman\Phial;
 
-interface FunctionHandlerInterface
+interface EventHandlerInterface
 {
     /**
      * @param array<string,mixed> $event

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Datashaman\Phial;
 
-interface FunctionMiddlewareInterface
+interface EventMiddlewareInterface
 {
     /**
      * @param array<string,mixed> $event
@@ -14,6 +14,6 @@ interface FunctionMiddlewareInterface
     public function process(
         array $event,
         ContextInterface $context,
-        FunctionHandlerInterface $handler
+        EventHandlerInterface $handler
     );
 }
