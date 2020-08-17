@@ -3,6 +3,7 @@
     "description": "Handler for phial.",
     "license": "MIT",
     "require": {
+        "adbario/php-dot-notation": "^2.2",
         "circli/event-dispatcher": "^2.2",
         "container-interop/service-provider": "^0.4.0",
         "kriswallsmith/buzz": "^1.1",
